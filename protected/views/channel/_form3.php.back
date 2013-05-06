@@ -1,0 +1,198 @@
+<script type="text/javascript">
+   function refreshPlaylist() {
+   
+   var playlist = $("#Channel_playlist_id").val();
+   var channel_id = <?=$model->id;?>;
+
+   $.post("/playlist/assign/"+playlist+"/"+channel_id, function (data) { $("#playlist").html(data); } );
+   
+
+
+ }
+
+</script>
+<div class="span-21">
+<?
+$playlist_id = $model->playlist_id;
+$playlist = Playlist::model()->findByPk($playlist_id);
+
+Yii::app()->clientScript->registerScript("playlist", '
+$(".createplaylist").click(function() { $("#playlist_form").load("/playlist/create", function() {      
+
+$("#playlist-form").on("submit", function()  { var data=$("#playlist-form").serialize(); $.post("/playlist/create", data, function(data) { if (data.len > 10) $("#playlist_form").html(data); else { 
+$("#Channel_playlist_id").append(new Option($("#Playlist_playlist_name").val(), data, true, true));
+ } }); return false; 
+$("#playlist_form").fadeOut();
+refreshPlaylist();
+
+});
+}
+
+
+);});;
+', CClientScript::POS_READY);
+
+?> 
+
+<fieldset>
+  
+<div class="alpha span-6">
+   <?= $form->dropDownListRow($model, 'playlist_id', CHtml::listData(Playlist::model()->findAll(), 'id', Playlist::representingColumn()), array('prompt' => Yii::t('AweApp', 'Ei soittolistaa'))) ?>
+<a id="585" value="Lisää" class="createplaylist" href="#"><img width="20" height="20" src="/images/new.png" style="width:20px;"> Luo uusi</a>
+<div id="playlist_form">
+</div>
+</div>
+<div class="span-8">
+<div id="minifms" class="miniplayer" style="text-align:center"> <img src="http://flash.flowplayer.org/media/img/player/btn/play_large.png" alt="Play this video" /></div>
+<script src="/js/flowplayer/flowplayer-3.2.6.min.js"></script>
+<script type="text/javascript">
+  $(function() {
+      $f("minifms", "/js/flowplayer/flowplayer-3.2.7.swf", {
+	play:null, 
+	    
+ 
+      
+
+	    clip: {  
+	
+	      url: '<?=$model->getSdp();?>',
+	      provider: 'rtmp',
+	      // preserve aspect ratios
+	      scaling: 'fit'
+  
+	      },
+
+	    canvas: {
+	    // customize player background, i.e. the canvas
+	  backgroundColor: '#000000',
+	      opacity: 0.3,
+	      backgroundGradient: [0.0,0.0,0.0,0.0,0.0,0.0]
+	      },
+	    onLoad: function() {seeked = 0;},
+	    onStart: function()
+	    {
+	      
+	      
+	    },
+  
+  
+	    
+	    plugins: {
+	  controls: {
+	    time:false,
+		scrubber:false,
+		borderRadius:24,
+		top:'95pct',
+		left:'50pct',
+		width:'175',
+		opacity: 1.0,
+		backgroundColor: '#000000',
+
+		volumeBarHeightRatio:0.3
+		},
+	      // RTMP streaming plugin
+	      rtmp: {
+	    url: '/js/flowplayer/flowplayer.rtmp-3.2.3.swf',
+		netConnectionUrl: 'rtmp://citystream.tv/rtplive'
+		},
+        
+	      // a content box so that we can see the selected bitrate. This is not normally
+	      // used in real installations.
+	      content: {
+            url: '/js/flowplayer/flowplayer.content-3.2.0.swf',
+		top: 0, left: 0, width: 400, height: 150,
+		backgroundColor: 'transparent', backgroundGradient: 'none', border: 0,
+		textDecoration: 'outline', 
+		style: {  
+	      body: {  
+		fontSize: 14,
+                    fontFamily: 'Arial', 
+                    color: '#ffffff' 
+		    }  
+	      }  
+	    }        
+	  }
+
+    
+	})
+
+
+	});
+</script>
+
+</div> 
+<br/>
+<div class="clear clearfix"></div>
+
+<div id="playlist">
+<?
+  $this->renderPartial("/playlist/playlist", array("model" => $playlist, 'id' => $playlist_id), false, false);
+
+?>
+</div>
+
+<div class="clear clearfix"></div>
+<h4>Kaikki videot</h4>
+
+<?
+
+$videos = Video::model();
+
+$this->widget('bootstrap.widgets.TbGridView',array(
+
+    'id'=>'project-gri',
+    'dataProvider'=>$videos->search(),
+    'afterAjaxUpdate'=>"function(id,data){ 
+  
+
+     $('.addvid').unbind().click(function() { var id = $(this).attr('id'); 
+            $.get('/playlist/addvideo/" . $model->id . "/'+id, function (data) { 
+            $('#playlist').html(data);
+
+        $('#project-grid table.items tbody').sortable({
+            forcePlaceholderSize: true,
+            forceHelperSize: true,
+            items: 'tr',
+            update : function () {
+                serial = $('#project-grid table.items tbody').sortable('serialize', {key: 'items[]', attribute: 'class'});
+                $.ajax({
+                    'url': '" . $this->createUrl('//PlaylistItem/sort') . "',
+                    'type': 'post',
+                    'data': serial,
+                    'success': function(data){
+
+                    },
+                    'error': function(request, status, error){
+                        alert('We are unable to set the sort order at this time.  Please try again in a few minutes.');
+                    }
+                });
+            },
+            helper: fixHelper
+        }).disableSelection();
+
+
+
+}
+
+);});}
+",
+
+    'rowCssClassExpression'=>'"items[]_{$data->id}"',
+    'columns'=>array(
+	array('type' => 'html', 'value' => '"<a class=\"update-dialog-open-link\" href=\"/video/watch/" . $data->id . "\"><img height=200 width=200 src=" . $data->thumbnail_url . "></a>"'),
+
+	array('type' => 'raw', 'value' => 'empty($data->title) ? "<a class=\"update-dialog-open-link\" href=\"/video/video/" . $data->id . "\">" . substr(basename($data->filename),0,30) . "</a>" : "<a class=\"update-dialog-open-link\" href=\"/video/video/" . $data->id . "\">" . $data->title . "</a>"'),
+
+	'video_codec',
+	'audio_codec',
+	'video_width',
+	'video_height',
+    	array('type' => 'raw', 'value' => '"<div style=\"min-width:60px;\"><a href=\"#\" class=\"addvid\" value=\"Lisää\" id=\"" . $data->id . "\"><img style=\"width:20px;\" width=20 height=20 src=\"/images/new.png\"></a> <a href=\"#\" class=\"delvid\" value=\"Poista\" id=\"" . $data->id . "\"><img style=\"width:20px;\" width=20 height=20 src=\"/images/poista.png\"/></a></div>"'),
+
+
+    ),
+						  )); 
+
+?>
+
+</div>

@@ -1,0 +1,74 @@
+
+
+.caroufredsel_wrapper {
+    background-color: #fff;
+    top: auto !important;
+    bottom: 0 !important;
+    }
+#carousel {
+    height: 66%;
+    min-height: 200px;
+    position: absolute;
+    top: auto;
+    left: 0;
+    }
+#carousel img {
+    height: 100%;
+    width: auto;
+    display: block;
+    float: left;
+    }
+.image_carousel {
+    padding: 15px 0 15px 40px;
+    position: relative;
+    }
+.image_carousel img {
+    padding: 9px;
+    margin: 7px;
+    display: block;
+    float: left;
+    }
+a.prevb, a.nextb {
+    background: url(miscellaneous_sprite.png) no-repeat transparent;
+    width: 45px;
+    height: 50px;
+    display: block;
+    position: absolute;
+    top: 85px;
+    }
+a.prevb {left: -22px;
+
+	background-position: 0 0; }
+a.prevb:hover {background-position: 0 -50px; }
+a.prevb.disabled {background-position: 0 -100px !important;  }
+a.nextb {right: 22px;
+	background-position: -50px 0; }
+a.nextb:hover {background-position: -50px -50px; }
+a.nextb.disabled {background-position: -50px -100px !important;  }
+a.prevb.disabled, a.nextb.disabled {
+    cursor: default;
+x    }
+
+a.prevb span, a.nextb span {
+    display: none;
+    }
+.paginationc {
+    text-align: center;
+    }
+.paginationc a {
+    background: url(miscellaneous_sprite.png) 0 -300px no-repeat transparent;
+    width: 15px;
+    height: 15px;
+    margin: 0 5px 0 0;
+    display: inline-block;
+    }
+.paginationc a.selected {
+    background-position: -25px -300px;
+    cursor: default;
+    }
+.paginationc a span {
+    display: none;
+    }
+
+
+

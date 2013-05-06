@@ -1,0 +1,177 @@
+<?php
+/** 
+ * EFlowPlayer
+ * ===========
+ * Yii extension for the [flowplayer](http://www.flowplayer.org)
+ *
+ * ###Description 
+ * This is an alpha version of the extension. 
+ * It supports only the basic configuration.
+ *
+ * ###Documentation
+ * Check the documentation folder and the README.mkd as well.
+ *
+ * ###Support
+ * - Yii 1.1.x
+ * - flowplayer 3.2.6
+ *
+ * This base code was generated with the [gii-extension-generator](http://www.yiiframework.com/extension/gii-extension-generator/)
+ * @version 0.2 alpha
+ * @author Dimitrios Mengidis
+ */
+class EFlowPlayer extends CWidget
+{
+    /** The flv url.
+     * If the flv is a string the will be one video render.
+     * If flv is an array then multiple video will be generated.
+     *
+     * @var mixed
+     * @since 0.2
+     */
+    public $flv;
+    /** Tag element player use for container.
+     * @var string
+     * @since 0.2
+     */
+    public $tag = 'div';
+    /** The flowplayer.swf url 
+     * @var string 
+     * @since 0.2
+     */
+    public $swfUrl;
+    /** The htmlOptions of the video
+     * @var array
+     * @since 0.2
+     */
+    public $htmlOptions;
+    /** The js scripts to register.
+     * @var array
+     * @since 0.1
+     */
+    private $js = array(
+        'flowplayer-3.2.6.min.js'
+    );
+    /** The css scripts to register.
+     * @var array
+     * @since 0.1
+     */
+    private $css = array(
+        'eflowplayer.css',
+    );
+
+    public $bitrates = array();
+    /** The asset folder after published
+     * @var string
+     * @since 0.1
+     */
+    private $assets;
+    /** 
+     * Publishing the assets.
+     *
+     * @since 0.1
+     */
+    private function publishAssets() 
+    {
+        $assets = dirname(__FILE__).DIRECTORY_SEPARATOR."assets".DIRECTORY_SEPARATOR;
+        $this->assets = Yii::app()->getAssetManager()->publish($assets);
+    }
+    /** 
+     * Register the core flowplayer js lib.
+     *
+     * @since 0.1
+     */
+    private function registerScripts()
+    {
+        $cs = Yii::app()->clientScript;
+
+        foreach($this->js as $file)
+        {
+            $cs->registerScriptFile($this->assets."/".$file, CClientScript::POS_END);
+        }
+        foreach($this->css as $file)
+        {
+            $cs->registerCssFile($this->assets."/".$file);
+        }
+    }
+    /** 
+     * Initialize the widget. :) 
+     * Publish the assets. Register the flowplayer lib.
+     * Initialize all necessary properties.
+     * 
+     * @since 0.1
+     */
+    public function init()
+    {
+        $this->publishAssets();
+        $this->registerScripts();
+
+        if(!isset($this->htmlOptions['id'])) $this->htmlOptions['id'] = $this->id;
+        if(!isset($this->swfUrl)) $this->swfUrl = $this->assets."/flowplayer-3.1.5.swf";
+    }
+    /** 
+     * Render the containers and configure the flowplayer code.
+     * THOUGHTS: Really don't like what is happening to the poor,
+     *  $htmlOptions param here.
+     * 
+     * @since 0.1
+     */
+    public function run()
+    {
+        if(is_array($this->flv)) {
+            foreach($this->flv as $id => $url) 
+            {
+                $originalID = $this->htmlOptions['id'];
+                if(is_int($id)) {                   
+                    $this->htmlOptions['id'] .= $id;
+                } else { 
+                    $this->htmlOptions['id'] = $id;
+                }
+            
+                $this->renderContainer();
+                $this->flowplayerScript($url);
+
+                $this->htmlOptions['id'] = $originalID;
+            }            
+        } else {
+            $this->renderContainer();
+            $this->flowplayerScript();
+        }
+
+    }
+    /** 
+     * Render the html element used as video container.
+     * 
+     * @since 0.3
+     */
+    private function renderContainer()
+    {
+        echo CHtml::openTag($this->tag, $this->htmlOptions);
+        echo CHtml::closeTag($this->tag);
+    }
+    /** 
+     * Configuration of the flowplayer.
+     * Register the javascript code to use the flowplayer()
+     * function.
+     * 
+     * @param
+     * @since 0.3
+     */
+    private function flowplayerScript($flv = null)
+    {
+        if(!isset($flv)) {
+            $flv = $this->flv;
+        }
+
+    $key = '#@1e88e1debaeb6a757ca';
+
+	$bitrates = $this->bitrates ? $this->bitrates : array();
+
+   
+	Yii::app()->clientScript->registerScript("player", "var time = 0; var url='" . $flv ."'; flowplayer('".$this->htmlOptions['id'] . "', {src:'/swf/flowplayer.commercial-3.2.7.swf', wmode: 'opaque'}, {key: '".$key."',play:{opacity:0}, clip:{autoPlay:true,start:time,autoBuffering:true,scaling:'fit',provider:'rtmp',url: url,bitrates: " . 
+CJSON::encode($bitrates) .
+						 ",accelerated:true,fadeInSpeed:7000}, onStart:function(){ this.seek(time); jQuery('#videoInfo').html('Playing <b>'+this.getClip().url.replace('mp4:', '')+' ('+this.getClip().metaData.width+'x'+this.getClip().metaData.height+')</b><small> AVC Profile: '+this.getClip().metaData.avcprofile+' / AVC Level: ' + this.getClip().metaData.avclevel); },onLastSecond:function(){},plugins:{rtmp:{url:'/swf/flowplayer.rtmp-3.2.3.swf',netConnectionUrl:'rtmp://media.vifi.ee/vod/'},bwcheck:{checkOnStart: true,url:'/swf/flowplayer.bwcheck-3.2.5.swf',netConnectionUrl:'rtmp://media.vifi.ee/vod/',serverType:'fms', onStreamSwitchBegin: function (newItem, currentItem) {
+              ". '$f()' .".getPlugin('content').setHtml('Will switch to: ' + newItem.streamName +
+                ' from ' + currentItem.streamName);
+            },onStreamSwitch:function(newItem){" . '$f()' . ".getPlugin('content').setHtml('Switched to: '+newItem.streamName);}},captions:{url:'/swf/flowplayer.captions-3.2.3.swf',captionTarget:'content',button:null},content:{url:'/swf/flowplayer.content-3.2.0.swf',bottom:15,height:70,backgroundColor:'transparent',backgroundGradient:'none',border:0,textDecoration:'outline',style:{body:{fontSize:20,fontFamily:'Arial',textAlign:'center',color:'#ffffff'}}},controls:{autoHide:'fullscreen'}}});"); 
+  }
+}

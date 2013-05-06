@@ -1,0 +1,92 @@
+<?php
+
+Yii::import('application.models._base.BaseChannel');
+
+class Channel extends BaseChannel
+{
+    /**
+     * @return Channel
+     */
+    public static function model($className = __CLASS__)
+    {
+        return parent::model($className);
+    }
+
+    public static function label($n = 1)
+    {
+        return Yii::t('app', 'Channel|Channels', $n);
+    }
+
+    public function getSdp() {
+
+      $playlist = $this->playlist;
+      $playlist_filename = str_replace(" ", "_", $playlist->playlist_name) . ".m3u";
+      $basename = basename($playlist_filename);
+      $basename_parts = explode(".", $basename);
+      $sdp = $basename_parts[0] . ".sdp";
+      
+      return $sdp;
+
+
+    }
+
+    public function start() {
+      $channel_id = $this->id;
+      $id = $this->id;
+      $user = $this->user;
+      $username = $user->username;
+      $this->stop();
+
+       $playlist = $this->playlist;
+       $port = $id*2+10000;
+       $audio = $port+1;
+       $playlist_filename = str_replace(" ", "_", $playlist->playlist_name) . ".m3u";
+       $playlist->generatePlaylistFile($username);
+
+       $playlist_file = "/www/citystream/files/" . $username . "/Soittolistat/" . $playlist_filename;
+       $basename = basename($playlist_file);
+       $basename_parts = explode(".", $basename);
+       $sdp = $basename_parts[0] . ".sdp";
+
+       $cmd = 'SUDO_UID=1 screen -dmS '.  $basename_parts[0] . ' vlc-wrapper ' . $playlist_file . ' --repeat  --sout="#duplicate{dst=rtp{dst=5.9.60.140,port-video=' . $port . ',port-aud=' . $audio . ',sdp=file:///usr/local/WowzaMediaServer/content/' . $sdp .'}}"';
+       echo $cmd;
+       shell_exec($cmd);
+      $this->status = 1;
+      $this->save();
+
+       
+       echo $this->name . " started\n";
+
+
+    }
+
+
+     public function stop() {
+
+
+       $user = $this->user;
+       $username = $user->username;
+       
+       $playlist = $this->playlist;
+       $id = $this->id;
+       $port = $id*2+10000;
+       $audio = $port+1;
+       $playlist_filename = str_replace(" ", "_", $playlist->playlist_name) . ".m3u";
+       $playlist->generatePlaylistFile($username);
+
+       $playlist_file = "/www/citystream/files/" . $username . "/Soittolistat/" . $playlist_filename;
+       $basename = basename($playlist_file);
+       $basename_parts = explode(".", $basename);
+
+       $shell_cmd = "screen  -S " . $basename_parts[0] . " kill";
+      $this->status = 0;
+      $this->save();
+
+       
+       shell_exec($shell_cmd);
+       echo $this->name . " stopped\n";
+
+     }
+
+
+}

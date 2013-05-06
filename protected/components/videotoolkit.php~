@@ -1,0 +1,84 @@
+<?php
+//      load the examples configuration                                                                                                                                                                                                                                         
+require_once 'videotoolkit/config.php';
+//      require the library                                                                                                                                                                                                                                                     
+require_once 'videotoolkit/phpvideotoolkit.php5.php';
+//      temp directory                                                                                                                                                                                                                                                          
+
+class videotoolkit {
+
+  public $files_to_process;
+  private $toolkit;
+  private $tmp_dir;
+
+  public function __construct($files=array()) {
+
+    $this->tmp_dir  = '/tmp/';
+    $this->toolkit = new PHPVideoToolkit($this->tmp_dir);
+    //  set PHPVideoToolkit class to run silently                                                                                                                                                                                                                               
+    $toolkit->on_error_die = FALSE;
+
+    if (!empty($files)) $this->files_to_process = $files;
+
+  }
+
+  public function addFile($file) {
+    if (file_exists($file)) {
+      $this->files_to_process[] = $file;
+      return true;
+    }
+    return false;
+  }
+
+  public function getInfo($file) {
+
+    $ok = $this->toolkit->setInputFile($file);
+
+    if(!$ok)
+      {
+        // if there was an error then get it                                                                                                                                                                                                                                    
+        echo $this->toolkit->getLastError();
+        $this->toolkit->reset();
+      }
+
+    $data = $this->toolkit->getFileInfo();
+    $this->toolkit->reset();
+    return $data;
+  }
+  function generateThumbnail($file) {
+
+//	output files dirname has to exist
+    $thumbnail_output_dir = dirname($file) . "/";
+
+// 		get the filename parts
+		$filename = basename($file);
+		$filename_minus_ext = substr($filename, 0, strrpos($filename, '.'));
+		
+		
+// 		extract a thumbnail from the fifth frame two seconds into the video
+		$cmd = "/usr/local/bin/screenshot.sh \"" . $file . "\" \"" . $thumbnail_output_dir . "/" . $filename_minus_ext. ".jpg\"";
+		shell_exec($cmd);
+		$file_path = $thumbnail_output_dir. $filename_minus_ext.'.jpg';
+		$file_url_parts = explode("/files/", $thumbnail_output_dir. $filename_minus_ext.'.jpg');
+		$file_url = "/files/" . $file_url_parts[1];
+
+
+		return $file_url;
+
+		
+  }
+
+  public function process() {
+
+    //  loop through the files to process                                                                                                                                                                                                                                       
+    foreach($this->files_to_process as $file)
+      {
+        $data[$file] = $this->getInfo($file);
+
+      }
+    return $data;
+  }
+}
+
+
+

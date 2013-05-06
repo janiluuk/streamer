@@ -1,0 +1,41 @@
+<?php
+
+Yii::import('application.models._base.BasePlaylist');
+
+class Playlist extends BasePlaylist
+{
+    /**
+     * @return Playlist
+     */
+    public static function model($className = __CLASS__)
+    {
+        return parent::model($className);
+    }
+
+    public static function label($n = 1)
+    {
+        return Yii::t('app', 'Soittolista|Soittolistat', $n);
+    }
+
+
+    public function generatePlaylistFile($user="") {
+      if (!$user) $username = Yii::app()->user->data()->username;
+      else $username = $user;
+
+      $filename = str_replace(" ", "_", $this->playlist_name . ".m3u");
+      $filepath = "/www/citystream/files/" . $username .  "/Soittolistat/" . $filename;
+
+    foreach ($this->Items as $item) {
+
+    
+	$videos .= $item->video->filepath . "\n";
+	
+    }
+
+    file_put_contents($filepath, $videos);
+    return $filepath;
+
+
+   }   
+
+}

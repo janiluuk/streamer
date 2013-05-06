@@ -1,0 +1,84 @@
+<?php
+
+class ImportContentCommand extends CConsoleCommand {
+    private $do_clean=false;
+    private $overwrite = false;
+    private $move_missing = false;
+    public function showUsage()
+    {
+echo <<<USAGE
+\033[1;1mNAME\033[1;m
+\timportContent
+\033[1;1mDESCRIPTION\033[1;m
+\t-i --import from directory
+
+USAGE;
+			 }
+    /// @TODO Build Argument Handler, -cdb should work too
+    public function run($args)
+    {
+
+      
+      if(in_array('-i',$args) || in_array('--import',$args))
+        $this->importContent();
+
+      
+      elseif(isset($args['help']) || isset($args['?']) || !count($args))
+        $this->showUsage();
+      else {
+      $this->showUsage();
+      }
+
+    }
+
+     public function getDir($dir) {
+
+       if ($handle = opendir($dir)) {
+		  while (false !== ($entry = readdir($handle))) {
+		    if ($entry != "." && $entry != "..") {
+		      $entries[] = $entry;
+		    }
+		  }
+		  closedir($handle);
+       }
+       return $entries;
+
+     }
+
+     public function getUsers() {
+       $dir = Yii::app()->params["contentPath"];
+       $users = $this->getDir($dir);
+       return $users;
+
+     }
+     public function importContent() {
+
+
+       $users = $this->getUsers();
+
+       
+       foreach ((array)$users as $user) {
+
+	 if (!$username = YumUser::model()->find('username="' . $user . '"')) {
+
+	   continue;
+	 }
+	 $uid = $username->id;
+	 $dir = Yii::app()->params["contentPath"] . "/" . $username->username . "/" . "Videot";
+	 
+	 $entries = $this->getDir($dir);
+	 
+	 foreach ($entries as $entry) {
+	   $vid = $dir . "/" . $entry;
+	   if (!strstr($vid, ".jpg") && !strstr($vid, ".png"))
+	   Video::model()->importVideoFile($vid, $uid);
+	 }
+
+       }       
+
+
+
+     }
+
+     }
+     

@@ -1,0 +1,82 @@
+<?php
+$this->breadcrumbs=array(
+	'Soittolistat'=>array('index'),
+	$model->id,
+);
+
+$this->menu=array(
+    //array('label' => Yii::t('AweCrud.app', 'List').' '.Playlist::label(2), 'icon' => 'list', 'url' => array('index')),
+    array('label' => Yii::t('AweCrud.app', 'Luo uusi').'', 'icon' => 'plus', 'url' => array('create')),
+	array('label' => Yii::t('AweCrud.app', 'Päivitä'), 'icon' => 'pencil', 'url' => array('update', 'id' => $model->id)),
+	array('label' => Yii::t('AweCrud.app', 'Aktivoi soittolista'), 'icon' => 'pencil', 'url' => array('generatePlaylist', 'id' => $model->id)),
+    array('label' => Yii::t('AweCrud.app', 'Poista'), 'icon' => 'trash', 'url' => '#', 'linkOptions' => array('submit' => array('delete', 'id' => $model->id), 'confirm' => Yii::t('AweCrud.app', 'Are you sure you want to delete this item?'))),
+    array('label' => Yii::t('AweCrud.app', 'Hallinnoi'), 'icon' => 'list-alt', 'url' => array('admin')),
+);
+$id = $model->id;
+?>
+
+<fieldset>
+    <legend> <?= CHtml::encode($model) ?></legend>
+<div id="playlist">
+<?
+  $this->renderPartial("playlist", array("model" => $model, 'id' => $id), false, true);
+
+?>
+</div>
+<?
+
+$videos = Video::model();
+$this->widget('zii.widgets.grid.CGridView', array(
+    'id'=>'project-gri',
+    'dataProvider'=>$videos->search(),
+    'afterAjaxUpdate'=>"function(id,data){ 
+     $('button.addvideo').click(function() { var id = $(this).attr('id'); 
+            $.get('/playlist/addvideo/" . $model->id . "/'+id, function (data) { 
+            $('#playlist').html(data);
+
+        $('#project-grid table.items tbody').sortable({
+            forcePlaceholderSize: true,
+            forceHelperSize: true,
+            items: 'tr',
+            update : function () {
+                serial = $('#project-grid table.items tbody').sortable('serialize', {key: 'items[]', attribute: 'class'});
+                $.ajax({
+                    'url': '" . $this->createUrl('//PlaylistItem/sort') . "',
+                    'type': 'post',
+                    'data': serial,
+                    'success': function(data){
+
+                    },
+                    'error': function(request, status, error){
+                        alert('We are unable to set the sort order at this time.  Please try again in a few minutes.');
+                    }
+                });
+            },
+            helper: fixHelper
+        }).disableSelection();
+
+
+
+}
+
+);});}
+",
+
+    'rowCssClassExpression'=>'"items[]_{$data->id}"',
+    'columns'=>array(
+	array('type' => 'html', 'value' => '"<a class=\"update-dialog-open-link\" href=\"/video/watch/" . $data->id . "\"><img height=200 width=200 src=" . $data->thumbnail_url . "></a>"'),
+
+	'filepath',
+	'video_codec',
+	'audio_codec',
+	'video_width',
+	'video_height',
+        'title',
+    	array('type' => 'raw', 'value' => '"<button class=\"addvideo\" value=\"Lisää\" id=\"" . $data->id . "\">Lisää</button>"'),
+
+
+    ),
+						  )); 
+
+?>
+

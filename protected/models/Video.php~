@@ -1,0 +1,111 @@
+<?php
+
+Yii::import('application.models._base.BaseVideo');
+Yii::import('application.components.videotoolkit');
+
+
+class Video extends BaseVideo
+{
+    const RTMP_LINK = "rtmp://citystream.tv/vod/";
+    /**
+     * @return Video
+     */
+    public static function model($className = __CLASS__)
+    {
+        return parent::model($className);
+    }
+
+    public static function label($n = 1)
+    {
+        return Yii::t('app', 'Video|Videot', $n);
+    }
+    
+    public function getLink() {
+            return "/files/" . basename($this->filename);
+    }
+
+
+    public function importVideoFile($file, $user_id) {
+     
+	$file = str_replace("//", "/", $file);
+
+	if (!file_exists($file)) {
+	  throw new Exception("Video {$file} not found");
+
+	}
+
+	if (!$video = Video::model()->find("filepath = '" . $file ."'")) {
+
+	$video = new Video();
+	$video->filepath = $file;
+	if ($video->getFileProperties()) {
+	$video->user_id = $user_id;
+	$video->getThumbnail();
+	$video->save();
+
+	}
+	}
+
+	return $video;
+
+
+   }  
+    /*
+     * Get videofile properties through videotoolkit
+     * @params string $file filename
+     * @return array file properties or false
+     */
+
+    public function getFileProperties() {
+        $toolkit = new videotoolkit();
+	if (file_exists($this->filepath)) {
+        if ($info = $toolkit->getInfo($this->filepath)) {
+	  
+	  if (!is_array($info["duration"]["timecode"])) $this->length = $info["duration"]["timecode"]["rounded"];
+	  $this->bitrate = $info["bitrate"];
+	  $this->filesize = filesize($this->filepath);
+	  $this->filename = basename($this->filepath);
+	  $this->video_container = substr($this->filename, strrpos($this->filename, '.'));
+	  $this->video_width = $info["video"]["dimensions"]["width"];
+	  $this->video_height = $info["video"]["dimensions"]["height"];
+	  $this->framerate = $info["video"]["frame_rate"];
+	  $this->video_codec = $info["video"]["codec"];
+	  $this->audio_samplerate = $info["audio"]["sample_rate"];
+	  $this->audio_codec = $info["audio"]["codec"];
+	  if ($this->video_width < 600) return false;
+	  return $info;
+        }
+
+	}
+    }
+
+	public function getThumbnail() {
+	  $toolkit = new videotoolkit();
+
+	  $url = $toolkit->generateThumbnail($this->filepath);
+	  $this->thumbnail_url = $url;
+
+
+	}
+
+    /*
+     * Return a filename that is relative to the root directory of the RTMP service
+     *
+     */
+
+    public function getRtmpLink() {
+      
+      $prefix="/files/";
+
+      $filename = basename($this->filename);
+      $parts = explode("_", basename($this->filename));
+
+      //      $profile = str_replace(".mp4", "", strtolower(array_pop($parts)));
+      
+      $dir = $this->user->username;
+      return $prefix . "" . $dir  . "/Videot/" . $filename;
+
+      
+    }   
+
+}

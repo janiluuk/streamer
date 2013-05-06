@@ -1,0 +1,81 @@
+<?php
+$this->breadcrumbs=array(
+	'Videokirjasto'=>array('index'),
+	Yii::t('AweCrud.app', 'Hallinnoi'),
+);
+
+$this->menu=array(
+	array('label' => Yii::t('AweCrud.app', 'Lisää uusi') . ' video', 'icon' => 'plus', 'url' => array('create')),
+);
+
+Yii::app()->clientScript->registerScript('search', "
+$('.search-button').click(function(){
+	$('.search-form').toggle();
+	return false;
+});
+$('.search-form form').submit(function(){
+	$.fn.yiiGridView.update('video-grid', {
+		data: $(this).serialize()
+	});
+	return false;
+});
+");
+?>
+
+<fieldset>
+    <legend>
+        <?= Yii::t('AweCrud.app', 'Videokirjasto') ?>   </legend>
+
+
+<div class="search-form" style="display:none">
+<?php $this->renderPartial('_search',array(
+	'model'=>$model,
+)); ?>
+</div><!-- search-form -->
+
+<?php $this->widget('bootstrap.widgets.TbGridView',array(
+	'id' => 'video-grid',
+    'type' => 'striped condensed',
+	'dataProvider' => $model->search(),
+	'filter' => $model,
+	'columns' => array(
+
+	array('type' => 'html', 'value' => '"<a class=\"update-dialog-open-link\" href=\"/video/watch/" . $data->id . "\"><img height=100 width=100 src=" . $data->thumbnail_url . "></a>"'),
+        'title',
+        'filesize',
+        'filename',
+	/*      'filepath',  */
+        'created_at',
+        /*
+        'updated_at',
+        'language_id',
+        'type',
+        'bitrate',
+        'framerate',
+        'video_container',
+        'video_codec',
+        'audio_codec',
+        'audio_samplerate',
+        'video_width',
+        'video_height',
+        'length',
+        'profile',
+        'is_primary',
+        'primary',
+        array(
+					'name' => 'deleted',
+					'value' => '($data->deleted === 0) ? Yii::t(\'AweCrud.app\', \'No\') : Yii::t(\'AweCrud.app\', \'Yes\')',
+					'filter' => array('0' => Yii::t('AweCrud.app', 'No'), '1' => Yii::t('AweCrud.app', 'Yes')),
+					),
+        array(
+                    'name' => 'user_id',
+                    'value' => 'isset($data->user) ? $data->user : null',
+                    'filter' => CHtml::listData(YumUser::model()->findAll(), 'id', YumUser::representingColumn()),
+                ),
+        */
+		array(
+			'class'=>'bootstrap.widgets.TbButtonColumn',
+		),
+	),
+)); ?>
+</fieldset>

@@ -1,0 +1,34 @@
+<?php
+/* @var $this SiteController */
+
+$this->pageTitle=Yii::app()->name . '';
+$this->breadcrumbs=array(
+	'Etusivu',
+);
+?>
+
+<?php $this->widget('bootstrap.widgets.TbButton', array(
+							'label'=>'Videokirjasto',
+							'type'=>'info', // null, 'primary', 'info', 'success', 'warning', 'danger' or 'inverse'
+							'size'=>'large', // null, 'large', 'small' or 'mini'
+							'url' => '/site/file_manager'
+							)); ?>
+
+<?php $this->widget('bootstrap.widgets.TbButton', array(
+							'label'=>'Soittolistat',
+							'type'=>'success', // null, 'primary', 'info', 'success', 'warning', 'danger' or 'inverse'
+							'size'=>'large', // null, 'large', 'small' or 'mini'
+							'url' => '/playlist/admin'
+							)); ?></a>
+
+<?php $this->widget('bootstrap.widgets.TbButton', array(
+							'label'=>'Kansiot',
+							'type'=>'primary', // null, 'primary', 'info', 'success', 'warning', 'danger' or 'inverse'
+							'size'=>'large', // null, 'large', 'small' or 'mini'
+							)); ?>
+
+<?php $this->widget('bootstrap.widgets.TbButton', array(
+							'label'=>'Hintaryhmät',
+							'type'=>'warning', // null, 'primary', 'info', 'success', 'warning', 'danger' or 'inverse'
+							'size'=>'large', // null, 'large', 'small' or 'mini'
+							)); ?>

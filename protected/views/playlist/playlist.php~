@@ -1,0 +1,87 @@
+<?php     $str_js = "
+        var fixHelper = function(e, ui) {
+            ui.children().each(function() {
+                $(this).width($(this).width());
+            });
+            return ui;
+        };
+ 
+        $('#project-grid table.items tbody').sortable({
+            forcePlaceholderSize: true,
+            forceHelperSize: true,
+            items: 'tr',
+            update : function () {
+                serial = $('#project-grid table.items tbody').sortable('serialize', {key: 'items[]', attribute: 'class'});
+                $.ajax({
+                    'url': '" . $this->createUrl('//PlaylistItem/sort') . "',
+                    'type': 'post',
+                    'data': serial,
+                    'success': function(data){
+                    },
+                    'error': function(request, status, error){
+                        alert('We are unable to set the sort order at this time.  Please try again in a few minutes.');
+                    }
+                });
+            },
+            helper: fixHelper
+        }).disableSelection();
+
+     $('button.removevideo').click(function() { var id = $(this).attr('id'); 
+            $.get('/playlist/delvideo/'+id, function (data) {
+            $('#playlist').html(data);
+            return false;
+     });});
+
+     $('button.addvideo').click(function() { var id = $(this).attr('id'); 
+            $.get('/playlist/addvideo/" . $model->id . "/'+id, function (data) { 
+            $('#playlist').html(data);
+
+        $('#project-grid table.items tbody').sortable({
+            forcePlaceholderSize: true,
+            forceHelperSize: true,
+            items: 'tr',
+            update : function () {
+                serial = $('#project-grid table.items tbody').sortable('serialize', {key: 'items[]', attribute: 'class'});
+                $.ajax({
+                    'url': '" . $this->createUrl('//PlaylistItem/sort') . "',
+                    'type': 'post',
+                    'data': serial,
+                    'success': function(data){
+
+                    },
+                    'error': function(request, status, error){
+                        alert('We are unable to set the sort order at this time.  Please try again in a few minutes.');
+                    }
+                });
+            },
+            helper: fixHelper
+        }).disableSelection();
+
+
+
+}
+
+);});
+
+     
+
+
+    ";
+ Yii::app()->clientScript->registerScriptFile('/js/jquery-ui.min.js');
+
+Yii::app()->clientScript->registerScript('sortable-project', $str_js);
+
+$model = new PlaylistItem;
+$model->playlist_id = $id;
+
+$this->widget('zii.widgets.grid.CGridView', array(
+    'id'=>'project-grid',
+    'dataProvider'=>$model->search(),
+    'rowCssClassExpression'=>'"items[]_{$data->id}"',
+    'columns'=>array(
+	array('type' => 'html', 'value' => '"<a class=\"update-dialog-open-link\" href=\"/video/watch/" . $data->video->id . "\"><img height=100 width=100 src=" . $data->video->thumbnail_url . "></a>"'),
+
+	'video.filename',
+    	array('type' => 'raw', 'value' => '"<button class=\"removevideo\" value=\"Lisää\" id=\"" . $data->id . "\">Poista</button>"'),
+    ),
+						  )); 
