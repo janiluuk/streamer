@@ -1,5 +1,4 @@
 <?php
-
 class YumProfileVisit extends YumActiveRecord {
 
 	public static function model($className=__CLASS__) {
@@ -22,9 +21,8 @@ class YumProfileVisit extends YumActiveRecord {
 	}
 
 	public function tableName() {
-		if (isset(Yum::module('profile')->profileVisitTable))
-			return Yum::module('profile')->profileVisitTable;
-		return '{{profile_visit}}';
+			$this->_tableName = Yum::module('profile')->profileVisitTable;
+		return $this->_tableName;
 	}
 
 	public function rules() {
@@ -69,5 +67,5 @@ class YumProfileVisit extends YumActiveRecord {
 					'criteria' => $criteria,
 					));
 	}
-
 }
+?>

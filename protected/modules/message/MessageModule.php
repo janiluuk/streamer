@@ -9,10 +9,16 @@ class MessageModule extends CWebModule
 	// new internal messages by email. Available options:
 	// None, Digest, Instant, User, Threshold
 	// 'User' means to use the user-specific option in the user table
-	public $messageTable = '{{message}}';
 	public $notifyType = 'user';
 
+	public $messageTable = '{{message}}';
+
 	public $layout = 'application.modules.user.views.layouts.yum';
+
+	public $dateFormat = 'Y-m-d G:i:s';
+
+	public $inboxView = 'application.modules.message.views.message.index';
+	public $inboxRoute = array('index');
 
 	// Send a message to the user if the email changing has been succeeded
 	public $notifyEmailChange = true;
@@ -24,7 +30,8 @@ class MessageModule extends CWebModule
 	public $adminEmail = 'donotreply@example.com';
 
 	public $controllerMap = array(
-		'message' => array('class' => 'MessageModule.controllers.YumMessageController'),
-	);
+			'message' => array(
+				'class' => 'MessageModule.controllers.YumMessageController'),
+			);
 
 }

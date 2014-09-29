@@ -180,7 +180,7 @@ abstract class BaseVideo extends AweActiveRecord {
         ));
     }
 
-    public function onBeforeDelete() {
+    public function onBeforeDelete($event) {
       $files = $this->getAllFiles();
       
       foreach ((array)$files as $file) {

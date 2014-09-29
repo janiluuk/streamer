@@ -76,7 +76,7 @@ class YumProfileController extends YumController {
 		return parent::beforeAction($action);
 	}
 
-	public function loadModel($id = null) {
+	public function loadModel($id = null, $model="") {
 		if(!$id)
 			$id = Yii::app()->user->id;
 
@@ -102,10 +102,10 @@ class YumProfileController extends YumController {
 
 		if(Yii::app()->request->isAjaxRequest)
 			$this->renderPartial($view, array(
-						'model' => $this->_model));
+						'model' => $this->_model), false, true);
 		else
 			$this->render($view, array(
-						'model' => $this->_model));
+						'model' => $this->_model), false, true);
 
 	}
 
@@ -147,7 +147,7 @@ class YumProfileController extends YumController {
 
 	public function actionAdmin()
 	{
-		$this->layout = Yum::module()->adminLayout;
+		$this->layout = Yum::module('profile')->adminLayout;
 		$model = new YumProfile;
 
 		$dataProvider=new CActiveDataProvider('YumProfile', array(
@@ -160,7 +160,8 @@ class YumProfileController extends YumController {
 		));
 
 		$this->render('admin',array(
-			'dataProvider'=>$dataProvider,'model'=>$model,
-		));
+					'dataProvider'=>$dataProvider,
+					'model'=>$model,
+					));
 	}
 }

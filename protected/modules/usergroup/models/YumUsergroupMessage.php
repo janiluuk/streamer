@@ -1,6 +1,6 @@
 <?php
 
-class YumUsergroupMessage extends CActiveRecord{
+class YumUsergroupMessage extends YumActiveRecord{
 	public static function model($className=__CLASS__)
 	{
 		return parent::model($className);
@@ -8,7 +8,7 @@ class YumUsergroupMessage extends CActiveRecord{
 
 	public function tableName()
 	{
-		return '{{usergroup_messages}}';
+		return Yum::module('usergroup')->usergroupMessageTable;
 	}
 
 	public function beforeValidate() {
@@ -48,7 +48,6 @@ class YumUsergroupMessage extends CActiveRecord{
 			'message' => Yum::t('Message'),
 		);
 	}
-
 
 	public function search()
 	{

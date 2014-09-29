@@ -13,7 +13,7 @@ class YumPermissionController extends YumController
 		return array(
 				array('allow',
 					'actions'=>array('admin', 'create', 'index', 'delete'),
-					'users'=>array('admin')
+					'expression' => 'Yii::app()->user->isAdmin()',
 					),
 				array('deny',  // deny all other users
 					'users'=>array('*'),
@@ -36,10 +36,9 @@ class YumPermissionController extends YumController
 		$this->redirect(array('//role/permission/admin')); 
 	}
 
-	public function actionAdmin()
-	{
+	public function actionAdmin() {
 		$this->layout = Yum::module('role')->layout;
-		$model=new YumPermission('search');
+		$model = new YumPermission('search');
 		$model->unsetAttributes();  
 
 		if(isset($_GET['YumPermission']))
@@ -47,7 +46,11 @@ class YumPermissionController extends YumController
 
 		$this->render('admin',array(
 					'model'=>$model,
-					));
+          'rolefilter' => CHtml::listData(
+            YumRole::model()->findAll(), 'id', 'title'),
+          'actionfilter' => CHtml::listData(
+            YumAction::model()->findAll(), 'id', 'title')
+          ));
 	}
 
 	public function actionCreate() {
@@ -67,7 +70,7 @@ class YumPermissionController extends YumController
 					$model->principal_role = $_POST['YumPermission']['principal_id'];
 				}
 				if($model->save())
-					$this->redirect(array('admin'));
+					$this->redirect(array('create'));
 				return;
 			}
 		}

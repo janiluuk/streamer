@@ -1,9 +1,9 @@
 <?php 
-$this->pageTitle = Yii::app()->name . ' - ' . Yum::t("Salasanan vaihto");
-echo '<h2>'. Yum::t('Vaihda salasana') .'</h2>';
+$this->pageTitle = Yum::t("change password");
+echo '<h2>'. Yum::t('change password') .'</h2>';
 
 $this->breadcrumbs = array(
-	Yum::t("Vaihda salasana"));
+	Yum::t("Change password"));
 
 if(isset($expired) && $expired)
 	$this->renderPartial('password_expired');
@@ -11,12 +11,12 @@ if(isset($expired) && $expired)
 
 <div class="form">
 <?php echo CHtml::beginForm(); ?>
-
+	<?php echo Yum::requiredFieldNote(); ?>
 	<?php echo CHtml::errorSummary($form); ?>
 
 	<?php if(!Yii::app()->user->isGuest) {
-		echo '<div class="">';
-echo CHtml::label("Nykyinen salasana","currentPassword");
+		echo '<div class="row">';
+		echo CHtml::activeLabelEx($form,'currentPassword'); 
 		echo CHtml::activePasswordField($form,'currentPassword'); 
 		echo '</div>';
 	} ?>
@@ -25,8 +25,8 @@ echo CHtml::label("Nykyinen salasana","currentPassword");
 		'application.modules.user.views.user.passwordfields', array(
 			'form'=>$form)); ?>
 
-	<div class="submit">
-  <?php echo CHtml::submitButton(Yum::t("Vaihda"), array('class' => 'btn span-5 btn-primary')); ?>
+	<div class="row submit">
+	<?php echo CHtml::submitButton(Yum::t("Save")); ?>
 	</div>
 
 <?php echo CHtml::endForm(); ?>

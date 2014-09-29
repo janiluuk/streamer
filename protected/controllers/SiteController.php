@@ -40,7 +40,7 @@ class SiteController extends Controller
 
 	public function filterApiContext($filterChain) {
 	  	  $host = explode(".", $_SERVER["HTTP_HOST"]);
-	  if ($host[0] != "www" && $host[0] != "citystream") {   $this->actionWatch($host[0]); exit(); } // $this->redirect('/channel/watch/'.$host[0]);
+		  //	  if ($host[0] != "www" && $host[0] != "citystream") {   $this->actionWatch($host[0]); exit(); } // $this->redirect('/channel/watch/'.$host[0]);
 	  
 	  $filterChain->run();
 	}

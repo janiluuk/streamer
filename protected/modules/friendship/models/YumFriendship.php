@@ -64,13 +64,14 @@ class YumFriendship extends YumActiveRecord {
 	public function acceptFriendship() {
 		$this->acknowledgetime = time();
 		$this->status = 2;
-		if(Yum::hasModule('messages') 
+		if(Yum::hasModule('message') 
 				&& isset($this->inviter->privacy) 
 				&& $this->inviter->privacy->message_new_friendship) {
-			Yii::import('application.modules.messages.models.YumMessage');
+			Yii::import('application.modules.message.models.YumMessage');
 			YumMessage::write($this->inviter, $this->invited,
 					Yum::t('Your friendship request has been accepted'),
-					YumTextSettings::getText('text_friendship_confirmed', array(
+					strtr(
+						'Your friendship request to {username} has been accepted', array(
 							'{username}' => $this->inviter->username))); 
 		}
 		$this->save(false, array('acknowledgetime', 'status'));
@@ -112,14 +113,9 @@ class YumFriendship extends YumActiveRecord {
 
 	public function tableName()
 	{
-		if(isset(Yum::module('friendship')->friendshipTable))
-			$this->_tableName = Yum::module()->friendshipTable;
-		elseif(isset(Yii::app()->modules['user']['friendshipTable']))
-			$this->_tableName = Yii::app()->modules['user']['friendshipTable'];
-		else
-			$this->_tableName = '{{friendship}}'; // fallback if nothing is set
+		$this->_tableName = Yum::module('friendship')->friendshipTable;
 
-		return Yum::resolveTableName($this->_tableName, $this->getDbConnection());
+		return $this->_tableName;
 	}
 
 	public function rules()
@@ -159,14 +155,15 @@ class YumFriendship extends YumActiveRecord {
 		// If the user has activated email receiving, send a email
 		if($this->isNewRecord)
 			if($user = YumUser::model()->findByPk($this->friend_id))  {
-				if(Yum::hasModule('messages')
+				if(Yum::hasModule('message')
 						&& $user->privacy 
 						&& $user->privacy->message_new_friendship) {
-					Yii::import('application.modules.messages.models.YumMessage');
+					Yii::import('application.modules.message.models.YumMessage');
 					YumMessage::write($user, $this->inviter,
 							Yum::t('New friendship request from {username}', array(
 									'{username}' => $this->inviter->username)),
-							YumTextSettings::getText('text_friendship_new', array(
+							strtr(
+								'A new friendship request from {username} has been made: {message} <a href="{link_friends}">Manage my friends</a><br /><a href="{link_profile}">To the profile</a>', array(
 									'{username}' => $this->inviter->username,
 									'{link_friends}' => Yii::app()->controller->createUrl('//friendship/friendship/index'),
 									'{link_profile}' => Yii::app()->controller->createUrl('//profile/profile/view'),

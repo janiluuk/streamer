@@ -70,7 +70,7 @@ class YumRestController extends CController
 			if($profile->hasAttribute($key))
 				$profile->$key = $value;
 
-		if($profile->validate() && $model->register($username, $password, $profile))
+		if($profile->validate() && $model->register($username, $password, $profile, YumUser::generateSalt()))
 			$this->_sendResponse(200, 
 					CJSON::encode(array($model, $profile)));	
 		else {
@@ -118,7 +118,7 @@ class YumRestController extends CController
 			$this->_sendResponse(200, CJSON::encode($result));
 	}
 
-	public function actionList($model) {
+	public function actionList($mode) {
 		switch($mode)
 		{
 			case 'users':

@@ -32,7 +32,7 @@ return array(
 		),
 		  'user' => array(
 				  'debug' => false,
-				  'userTable' => 'user',
+				  'userTable' => 'users',
 				  'translationTable' => 'translation',
 				  ),
 		  'usergroup' => array(
@@ -100,7 +100,7 @@ return array(
 			'tablePrefix' => '',
 			'emulatePrepare' => true,
 			'username' => 'root',
-			'password' => 'zxcvfdsA',
+			//			'password' => 'zxcvfdsA',
 			'charset' => 'utf8',
 		),
 
@@ -109,7 +109,7 @@ return array(
 			'errorAction'=>'site/error',
 		),
 			    'cache' => array(
-					     					     'class' => 'CApcCache',
+					     					     'class' => 'CFileCache',
 					     ), 
         'urlManager' => array(
             'showScriptName' => false,
@@ -146,14 +146,15 @@ return array(
 			'routes'=>array(
 				array(
 					'class'=>'CFileLogRoute',
-					'levels'=>'error, warning',
+					'levels'=>'error, warning,trace',
 				),
 				// uncomment the following to show log messages on web pages
-				/*
+				
 				array(
 					'class'=>'CWebLogRoute',
+					'levels'=>'error,trace,debug,warning'
 				),
-				*/
+				
 			),
 		),
 	),

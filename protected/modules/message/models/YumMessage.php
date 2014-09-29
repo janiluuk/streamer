@@ -1,4 +1,5 @@
 <?php
+Yii::import('application.modules.user.models.*');
 
 /**
  * This is the model class for the Message subsystem of the Yii User 
@@ -38,21 +39,32 @@ class YumMessage extends YumActiveRecord
 		return false;
 	} 
 
-	public function afterSave() {
-		// If the user has activated email receiving, send a email
-		if($this->to_user->privacy && $this->to_user->privacy->message_new_message) {
-			Yum::log( Yum::t(
-						'Message id {id} has been sent from user {from_user_id} to user {to_user_id}', array(
-						'{id}' => $this->id,
-						'{from_user_id}' => $this->from_user_id,
-						'{to_user_id}' => $this->to_user_id,
-						)));
+	public function beforeSave() {
+		if($this->isNewRecord) {
+			// If the user has activated email receiving, send a email
+			if($this->to_user->privacy && $this->to_user->privacy->message_new_message) {
+				Yum::log( Yum::t(
+							'Message id {id} has been sent from user {from_user_id} to user {to_user_id}', array(
+								'{id}' => $this->id,
+								'{from_user_id}' => $this->from_user_id,
+								'{to_user_id}' => $this->to_user_id,
+								)));
 
-			YumMailer::send($this->to_user->profile->email,
-					$this->title,
-					$this->message);
-}
-		return parent::afterSave();
+				$answer_link = CHtml::link(Yum::t('Click here to respond to {username}', array(
+								'{username}' => $this->from_user->username)),
+						Yii::app()->controller->createAbsoluteUrl(
+							'//message/message/compose', array(
+							'to_user_id' => $this->from_user_id)));
+
+				YumMailer::send($this->to_user->profile->email,
+						Yum::t('New message from {from}: {subject}', array(
+								'{from}' => $this->from_user->username,
+								'{subject}' => $this->title,
+								)),
+						$this->message . '<br />' . $answer_link);
+			}
+		}
+		return parent::beforeSave();
 	}  
 
 	// Small wrapper function to quickly send messages from inside the workflow
@@ -93,6 +105,7 @@ class YumMessage extends YumActiveRecord
 
 		$message->title = $subject;
 		$message->message = $body;
+		$message->message_read = 0;
 
 		return $message->save();
 	}
@@ -142,18 +155,14 @@ class YumMessage extends YumActiveRecord
 	 */
 	public function tableName()
 	{
-		if (isset(Yum::module('message')->messageTable))
-			$this->_tableName = Yum::module('message')->messageTable;
-		else
-			$this->_tableName = '{{message}}'; // fallback if nothing is set
-
-		return Yum::resolveTableName($this->_tableName,$this->getDbConnection());
+		$this->_tableName = Yum::module('message')->messageTable;
+		return $this->_tableName;
 	}
 
 	public function rules()
 	{
 		return array(
-				array('from_user_id, to_user_id, title', 'required'),
+				array('from_user_id, to_user_id, title, timestamp', 'required'),
 				array('from_user_id, draft, message_read, answered', 'numerical', 'integerOnly'=>true),
 				array('title', 'length', 'max'=>255),
 				array('message', 'safe'),
@@ -227,7 +236,7 @@ class YumMessage extends YumActiveRecord
 
 	public function getDate()
 	{
-		return date(Yii::app()->getModule('user')->dateTimeFormat, $this->timestamp);
+		return date(Yum::module('message')->dateFormat, $this->timestamp);
 	}
 
 	public function beforeDelete() {

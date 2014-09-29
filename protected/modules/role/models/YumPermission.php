@@ -1,24 +1,23 @@
 <?php
 
 class YumPermission extends YumActiveRecord {
+  public $subaction = "";
+
 	public static function model($className=__CLASS__) {
 		return parent::model($className);
 	}
 
 	public function tableName() {
-		if(isset(Yum::module('role')->permissionTable))
-			$this->_tableName = Yum::module('role')->permissionTable;
-		else
-			$this->_tableName = '{{permission}}'; // fallback if nothing is set
-		return Yum::resolveTableName($this->_tableName, $this->getDbConnection());
+		$this->_tableName = Yum::module('role')->permissionTable;
+		return $this->_tableName;
 	}
 
 	public function rules() {
 		return array(
 			array('principal_id, subordinate_id, type, action, template', 'required'),
-			array('principal_id, subordinate_id, action, template', 'numerical', 'integerOnly'=>true),
+			array('principal_id, subordinate_id, action, subaction, template', 'numerical', 'integerOnly'=>true),
 			array('type', 'length', 'max'=>4),
-			array('principal_id, subordinate_id, type, action, template, comment', 'safe'),
+			array('principal_id, subordinate_id, type, action, subaction, template, comment', 'safe'),
 		);
 	}
 
@@ -28,7 +27,8 @@ class YumPermission extends YumActiveRecord {
 			'subordinate' => array(self::BELONGS_TO, 'YumUser', 'subordinate_id'),
 			'principal_role' => array(self::BELONGS_TO, 'YumRole', 'principal_id'),
 			'subordinate_role' => array(self::BELONGS_TO, 'YumRole', 'subordinate_id'),
-			'Action' => array(self::BELONGS_TO, 'YumAction', 'action')
+			'Action' => array(self::BELONGS_TO, 'YumAction', 'action'),
+			'Subaction' => array(self::BELONGS_TO, 'YumAction', 'subaction')
 		);
 	}
 
@@ -39,6 +39,7 @@ class YumPermission extends YumActiveRecord {
 			'subordinate_id' => Yum::t('Subordinate'),
 			'type' => Yum::t('Type'),
 			'action' => Yum::t('Action'),
+			'subaction' => Yum::t('Subaction'),
 			'template' => Yum::t('Grant permission to new users'),
 			'comment' => Yum::t('Comment'),
 		);
@@ -55,12 +56,18 @@ class YumPermission extends YumActiveRecord {
 		$criteria->compare('principal_id', $this->principal_id);
 		$criteria->compare('subordinate_id', $this->subordinate_id);
 		$criteria->compare('type', $this->type, true);
-		$criteria->compare('action', $this->action);
 		$criteria->compare('template', $this->template);
 		$criteria->compare('comment', $this->comment, true);
 
+		$criteria->compare('action', $this->action);
+		$criteria->compare('subaction', $this->subaction);
+
+
 		return new CActiveDataProvider(get_class($this), array(
-			'criteria'=>$criteria,
+      'criteria'=>$criteria,
+      'pagination' => array(
+        'pageSize' => Yum::module()->pageSize,
+      ),
 		));
 	}
 }

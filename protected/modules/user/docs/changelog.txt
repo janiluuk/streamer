@@ -1,5 +1,26 @@
 Changelog for Yii User Management Module (Yum) 
 
+0.9 wip:
+
+- ENH: integrated EPasswordGenerator
+(https://github.com/ibrarturi/EPasswordGenerator)
+- ENH: Integrated pStrength jquery widget
+- ENH: uses CPasswordHelper of yii 1.1.14. This release of yii is now 
+- mandatory.
+- ENH: added hybridauth support - see docs/hybridauth.txt
+- ENH: added captchaAfterUnsuccessfulLogins (default to 3)
+- ENH: overhauled profile management
+
+New in 0.8 final release:
+
+- Added Avatar Management
+- removed Yum::route
+- membership: downgrading support
+- membership: user can chooses if he want to subscribe to his membership
+- yumsettings & yumtextsettings are removed. To adjust the strings for your
+application, use Yum::t() or extend from the Yum Classes
+
+2012-06-05: Yum moved to Github !
 
 New in 0.8-rc6:
 - Added Gravatar support in Avatar submodule
@@ -13,7 +34,6 @@ New in 0.8-rc2:
 - Removed fields group feature. Please overwrite the existing views if you
 	need field groups.
 - ENH: added a RESTful api (docs/RESTful_api.txt)
-- removed the yumsettings table and functionality completely. All options need to be configured in the application configuration now. This really is better.  Note that yumTextSettings are kept. Because they make sense. Yumsettings dont. 
 - started to make the module clean. The avatar, role, usergroup, membership and messages module are now own submodules.
 See docs/avatar.txt and docs/messages.txt on how to use it now. I will do this for all other
 submodules step-by-step, too. 

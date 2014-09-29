@@ -5,7 +5,7 @@ $this->breadcrumbs=array(
 		);
 ?>
 
-<h2><?php echo Yum::t('Manage Translations'); ?> </h2>
+<h1><?php echo Yum::t('Manage Translations'); ?> </h1>
 
 <?php $this->widget('zii.widgets.grid.CGridView', array(
 			'id'=>'category-grid',

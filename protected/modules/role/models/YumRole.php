@@ -2,7 +2,7 @@
 class YumRole extends YumActiveRecord {
 	private $_userRoleTable;
 	private $_roleRoleTable;
-
+	public $membership_priority;
 	public static function model($className=__CLASS__)
 	{
 		return parent::model($className);
@@ -10,19 +10,15 @@ class YumRole extends YumActiveRecord {
 
 	public function tableName()
 	{
-		if (isset(Yum::module('role')->roleTable))
-			$this->_tableName = Yum::module('role')->roleTable;
-		else
-			$this->_tableName = '{{role}}'; // fallback if nothing is set
-
-		return Yum::resolveTableName($this->_tableName,$this->getDbConnection());
+		$this->_tableName = Yum::module('role')->roleTable;
+		return $this->_tableName;
 	}
 
 	public function rules()
 	{
 		return array(
 				array('title', 'required'),
-				array('is_membership_possible', 'numerical'),
+				array('membership_priority', 'numerical'),
 				array('price', 'numerical'),
 				array('duration', 'numerical'),
 				array('title, description', 'length', 'max' => '255'),
@@ -31,7 +27,8 @@ class YumRole extends YumActiveRecord {
 
 	public function scopes() {
 		return array(
-				'possible_memberships' => array('condition' => 'is_membership_possible = 1'),
+				'possible_memberships' => array(
+					'condition' => 'membership_priority > 0'),
 				);
 	}
 

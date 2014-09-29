@@ -8,8 +8,8 @@ class YumMenu extends CMenu {
 	public function init() {
 		parent::init();
 		$this->activateParents = true;
-		Yii::app()->clientScript->registerScript('menutoggle', 
-				"$('.parent').click(function() { $(this).next().fadeToggle(250);});");
+		$this->htmlOptions = array('class' => 'nav nav-list');
+		$this->submenuHtmlOptions = array('class' => 'nav nav-list');
 	}
 
 	/**
@@ -25,7 +25,8 @@ class YumMenu extends CMenu {
 				echo CHtml::tag('span',isset($item['linkOptions']) ? $item['linkOptions'] : array(), $item['label']);
 			if(isset($item['items']) && count($item['items']))
 			{
-				echo "\n".CHtml::openTag('ul',$this->submenuHtmlOptions)."\n";
+				echo "\n".
+				CHtml::openTag('ul',$this->submenuHtmlOptions)."\n";
 				$this->renderMenuRecursive($item['items']);
 				echo CHtml::closeTag('ul')."\n";
 			}
@@ -46,7 +47,7 @@ class YumMenu extends CMenu {
 				unset($items[$i]);
 				continue;
 			}
-				$items[$i]['label']=CHtml::encode(Yum::t($item['label']));
+			$items[$i]['label']=CHtml::encode(Yum::t($item['label']));
 			$hasActiveChild=false;
 
 			$items[$i]['linkOptions']['class'] = '';

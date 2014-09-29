@@ -27,7 +27,7 @@ echo $form->dropDownListRow($model, 'status', Channel::getStatusList(), array('c
 ?>
 <?
    if ($model->id) {
-     $this->renderPartial("_extra", array("model" => $model),false,false);
+     $this->renderPartial("_extra", array("model" => $model),false,false);
 
    }
 ?>

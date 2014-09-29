@@ -111,9 +111,10 @@ abstract class AweController extends Controller
      * @see AweActiveRecord::pkSeparator
      * @throws CHttpException if there's an invalid request (with code 400) or if the model is not found (with code 404).
      */
-    public function loadModel($key, $modelClass)
+    public function loadModel($key="", $modelClass="")
     {
 
+      if (empty($modelClass)) $modelClass = ucfirst(str_replace("Controller", "", $this->id));
         // Get the static model.
         $staticModel = AweActiveRecord::model($modelClass);
 

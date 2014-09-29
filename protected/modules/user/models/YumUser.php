@@ -1,399 +1,382 @@
 <?php
 
 /**
- * This is the model class for a User in Yum
- *
- * The followings are the available columns in table '{{users}}':
- * @property integer $id
- * @property string $username
- * @property string $password
- * @property string $activationKey
- * @property integer $createtime
- * @property integer $lastvisit
- * @property integer $superuser
- * @property integer $status
- *
- * Relations
- * @property YumProfile $profile
- * @property array $roles array of YumRole
- * @property array $users array of YumUser
- *
- * Scopes:
- * @property YumUser $active
- * @property YumUser $notactive
- * @property YumUser $banned
- * @property YumUser $superuser
+ * This is the model class for a User in Yum.
  *
  */
 class YumUser extends YumActiveRecord
 {
-	const STATUS_INACTIVE = 0;
-	const STATUS_ACTIVE = 1;
-	const STATUS_BANNED = -1;
-	const STATUS_REMOVED = -2;
+  const STATUS_BANNED = -2; // Removed by Admin
+  const STATUS_REMOVED = -1; // Removed by User himself
+  const STATUS_INACTIVE = 0;
+  const STATUS_ACTIVE = 1;
 
-	public $username;
-	public $password;
-	public $activationKey;
-	public $password_changed = false;
+  public $username;
+  public $password;
+  public $activationKey;
+  public $filter_role;
+  public $password_changed = false; // flag for password change
 
-	public $guid_authentication_url = "https://www.cityshops.eu/api/auth/";
+  public function behaviors()
+  {
+    return array();
+  }
 
-	public function behaviors()
-	{
-		return array(
-				'CAdvancedArBehavior' => array(
-					'class' => 'application.modules.user.components.CAdvancedArBehavior'));
-	}
+  public static function model($className = __CLASS__)
+  {
+    return parent::model($className);
+  }
 
-	public function __toString() {
-	  return "Käyttäjä";
+  public function delete()
+  {
+    if (Yum::module()->trulyDelete) {
+      if($this->profile)
+        $this->profile->delete();
+      return parent::delete();
+    } else {
+      $this->status = self::STATUS_REMOVED;
+      return $this->save(false, array('status'));
+    }
+  }
 
+  public function afterDelete()
+  {
+    if (Yum::hasModule('profiles') && $this->profile !== null)
+      $this->profile->delete();
 
-	}
-    public static function representingColumn() {
-        return 'username';
+    Yum::log(Yum::t('User {username} (id: {id}) has been deleted', array(
+      '{username}' => $this->username,
+      '{id}' => $this->id)));
+    return parent::afterDelete();
+  }
+
+  public function isOnline()
+  {
+    return $this->lastaction > time() - Yum::module()->offlineIndicationTime;
+  }
+
+  // If Online status is enabled, we need to set the timestamp of the
+  // last action when a user does something
+  public function setLastAction()
+  {
+    if (!Yii::app()->user->isGuest && !$this->isNewRecord) {
+      $this->lastaction = time();
+      return $this->save(false, array('lastaction'));
+    }
+  }
+
+  public function getLogins()
+  {
+    $sql = "select count(*) from activities where user_id = {$this->id} and action = 'login'";
+    $result = Yii::app()->db->createCommand($sql)->queryAll();
+    return $result[0]['count(*)'];
+  }
+
+  public function logout()
+  {
+    if (Yum::module()->enableOnlineStatus && !Yii::app()->user->isGuest) {
+      $this->lastaction = 0;
+      $this->save(false, array('lastaction'));
+    }
+  }
+
+  public function isActive()
+  {
+    return $this->status == YumUser::STATUS_ACTIVE;
+  }
+
+  // Which memberships are bought by the user
+  public function getActiveMemberships()
+  {
+    if (!Yum::hasModule('membership'))
+      return array();
+
+    Yii::import('application.modules.role.models.*');
+    Yii::import('application.modules.membership.models.*');
+
+    $roles = array();
+
+    if ($this->memberships)
+      foreach ($this->memberships as $membership) {
+        if ($membership->end_date > time())
+          $roles[] = $membership->role;
+      }
+
+    return $roles;
+  }
+
+  public function search() {
+    $criteria = new CDbCriteria;
+    $sort = new CSort();
+
+    if (Yum::hasModule('profile') && $this->profile) {
+      $criteria->with = array('profile');
+      $criteria->together = false;
+      foreach(YumProfile::getProfileFields() as $column) {
+        if ($this->profile->{$column})
+          $criteria->compare(
+            'profile.'.$column,
+            $this->profile->{$column},
+            true);
+        $sort->attributes['profile.'.$column] = array(
+          'asc'=>'profile.'.$column,
+          'desc'=>'profile.'.$column.' DESC',
+        );
+      }
     }
 
-	public static function model($className = __CLASS__)
-	{
-		return parent::model($className);
-	}
-
-	public function delete()
-	{
-		if (Yum::module()->trulyDelete)
-			return parent::delete();
-		else {
-			$this->status = self::STATUS_REMOVED;
-			return $this->save(false, array('status'));
-		}
-	}
-
-	public function afterDelete()
-	{
-		if (Yum::hasModule('profiles') && $this->profile !== null)
-			$this->profile->delete();
-
-		Yum::log(Yum::t('User {username} (id: {id}) has been deleted', array(
-						'{username}' => $this->username,
-						'{id}' => $this->id)));
-		return parent::afterDelete();
-	}
-
-	public function isOnline()
-	{
-		return $this->lastaction > time() - Yum::module()->offlineIndicationTime;
-	}
-
-	// If Online status is enabled, we need to set the timestamp of the
-	// last action when a user does something
-	public function setLastAction()
-	{
-		if (!Yii::app()->user->isGuest) {
-			$this->lastaction = time();
-			return $this->save(false, array('lastaction'));
-		}
-	}
-
-	public function getLogins()
-	{
-		$sql = "select count(*) from activities where user_id = {$this->id} and action = 'login'";
-		$result = Yii::app()->db->createCommand($sql)->queryAll();
-		return $result[0]['count(*)'];
-	}
-
-	public function logout()
-	{
-		if (Yum::module()->enableOnlineStatus && !Yii::app()->user->isGuest) {
-			$this->lastaction = 0;
-			$this->save('lastaction');
-		}
-	}
-
-	public function isActive()
-	{
-		return $this->status == YumUser::STATUS_ACTIVE;
-	}
-
-
-	// Look for user by guid
-
-	public function findByGuid($guid) {
-
-	  $model = YumUser::model()->find("guid=:guid", array("guid" => $guid));
-	  return $model;
-	}
-
-
-	// Check if user has GUID assigned for external authentication and therefor existing user in the system
-	public function hasGuid() {
-
-	  return (!empty($this->guid));
-
-	}
-
-	// This function tries to generate a as human-readable password as possible
-	public static function generatePassword()
-	{
-		$consonants = array("b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "r", "s", "t", "v", "w", "x", "y", "z");
-		$vocals = array("a", "e", "i", "o", "u");
-
-		$password = '';
-
-		srand((double)microtime() * 1000000);
-		for ($i = 1; $i <= 4; $i++) {
-			$password .= $consonants[rand(0, 19)];
-			$password .= $vocals[rand(0, 4)];
-		}
-		$password .= rand(0, 9);
-
-		return $password;
-	}
-
-
-	// Which memberships are bought by the user
-	public function getActiveMemberships()
-	{
-		if (!Yum::hasModule('membership'))
-			return array();
-
-		Yii::import('application.modules.role.models.*');
-		Yii::import('application.modules.membership.models.*');
-
-		$roles = array();
-		if ($this->memberships)
-			foreach ($this->memberships as $membership) {
-				if ($membership->end_date > time())
-					$roles[] = $membership->role;
-			}
-
-		return $roles;
-	}
-
-	public function search()
-	{
-		$criteria = new CDbCriteria;
-
-		if (Yum::hasModule('profile') && $this->profile) {
-			$criteria->with = array('profile');
-			if ($this->profile)
-				$criteria->compare('profile.email', $this->profile->email, true);
-
-			if (isset($this->email))
-				$criteria->addSearchCondition('profile.email', $this->email, true);
-		}
-
-		// Show newest users first by default
-		if (!isset($_GET['YumUser_sort']))
-			$criteria->order = 't.createtime DESC';
-
-		$criteria->together = false;
-		$criteria->compare('t.id', $this->id, true);
-		$criteria->compare('t.username', $this->username, true);
-		$criteria->compare('t.status', $this->status);
-		$criteria->compare('t.superuser', $this->superuser);
-		$criteria->compare('t.createtime', $this->createtime, true);
-		$criteria->compare('t.lastvisit', $this->lastvisit, true);
-
-		return new CActiveDataProvider(get_class($this), array(
-					'criteria' => $criteria,
-					'pagination' => array('pageSize' => 10),
-					));
-	}
-
-	public function beforeValidate()
-	{
-		if ($this->isNewRecord)
-			$this->createtime = time();
-
-		return true;
-	}
-
-	public function setPassword($password)
-	{
-		if ($password != '') {
-			$this->password = YumUser::encrypt($password);
-			$this->lastpasswordchange = time();
-			$this->password_changed = true;
-			if (!$this->isNewRecord)
-				return $this->save();
-			else
-				return $this;
-		}
-	}
-
-	public function afterSave()
-	{
-		if (Yum::hasModule('profile') && Yum::module('profile')->enablePrivacySetting) {
-			// create a new privacy setting, if not already available
-			$setting = YumPrivacySetting::model()->cache(500)->findByPk($this->id);
-			if (!$setting) {
-				$setting = new YumPrivacySetting();
-				$setting->user_id = $this->id;
-				$setting->save();
-			}
-			
-			if ($this->isNewRecord) {
-			  $user = $this->username;
-
-			  shell_exec("/usr/local/bin/user.sh {$user}");
-				Yum::log(Yum::t('A user has been created: user: {user}', array(
-								'{user}' => json_encode($this->attributes))));
-
-
-			}
-		}
-		return parent::afterSave();
-	}
-
-	/**
-	 * Returns resolved table name (incl. table prefix when it is set in db configuration)
-	 * Following algorith of searching valid table name is implemented:
-	 *  - try to find out table name stored in currently used module
-	 *  - if not found try to get table name from UserModule configuration
-	 *  - if not found user default {{users}} table name
-	 * @return string
-	 */
-	public function tableName()
-	{
-		if (isset(Yum::module()->usersTable))
-			$this->_tableName = Yum::module()->usersTable;
-		elseif (isset(Yii::app()->modules['user']['usersTable']))
-			$this->_tableName = Yii::app()->modules['user']['usersTable'];
-		else
-			$this->_tableName = 'user'; // fallback if nothing is set
-
-		return Yum::resolveTableName($this->_tableName, $this->getDbConnection());
-	}
-
-	public function rules()
-	{
-		$passwordRequirements = Yum::module()->passwordRequirements;
-		$usernameRequirements = Yum::module()->usernameRequirements;
-
-		$passwordrule = array_merge(array('password', 'YumPasswordValidator'), $passwordRequirements);
-
-		$rules[] = $passwordrule;
-
-		$rules[] = array('username', 'length',
-				'max' => $usernameRequirements['maxLen'],
-				'min' => $usernameRequirements['minLen'],
-				'message' => Yum::t(
-					'Username length needs to be between {minLen} and {maxlen} characters', array(
-						'{minLen}' => $usernameRequirements['minLen'],
-						'{maxLen}' => $usernameRequirements['maxLen'])));
-
-		$rules[] = array('username',
-				'unique',
-				'message' => Yum::t("This user's name already exists."));
-		$rules[] = array(
-				'username',
-				'match',
-				'pattern' => $usernameRequirements['match'],
-				'message' => Yum::t($usernameRequirements['dontMatchMessage']));
-		$rules[] = array('status', 'in', 'range' => array(0, 1, 2, 3, -1, -2));
-		$rules[] = array('superuser', 'in', 'range' => array(0, 1));
-		$rules[] = array('username, createtime, lastvisit, lastpasswordchange, superuser, status', 'required');
-		$rules[] = array('notifyType, avatar', 'safe');
-		$rules[] = array('password', 'required', 'on' => array('insert'));
-		$rules[] = array('createtime, lastvisit, lastaction, superuser, status', 'numerical', 'integerOnly' => true);
-
-		if (Yum::hasModule('avatar')) {
-			// require an avatar image in the avatar upload screen
-			$rules[] = array('avatar', 'required', 'on' => 'avatarUpload');
-
-			// if automatic scaling is deactivated, require the exact size	
-			$rules[] = array('avatar', 'EPhotoValidator',
-					'allowEmpty' => true,
-					'mimeType' => array('image/jpeg', 'image/png', 'image/gif'),
-					'maxWidth' => Yum::module('avatar')->avatarMaxWidth,
-					'maxHeight' => Yum::module('avatar')->avatarMaxWidth,
-					'minWidth' => 50,
-					'minHeight' => 50,
-					'on' => 'avatarSizeCheck');
-		}
-		return $rules;
-	}
-
-	public function hasRole($role_title)
-	{
-		if (!Yum::hasModule('role'))
-			return false;
-
-		Yii::import('application.modules.role.models.*');
-
-		$roles = $this->roles;
-		
-		if(Yum::hasModule('membership')) {
-			foreach($this->getActiveMemberships() as $membership)
-				$roles[] = $membership;
-		}
-
-		foreach ($roles as $role)
-			if ($role->id == $role_title || $role->title == $role_title)
-				return true;
-
-		return false;
-	}
-
-	public function getRoles()
-	{
-		if (Yum::hasModule('role')) {
-			Yii::import('application.modules.role.models.*');
-			$roles = '';
-			foreach ($this->roles as $role)
-				$roles .= ' ' . $role->title;
-
-			return $roles;
-		}
-	}
-
-	// We retrieve the permissions from:
-	// 1.) All direct given permissions ($this->permissions)
-	// 2.) All direct given permissions to a role the user belongs
-	// 3.) All active memberships
-	public function getPermissions()
-	{
-		if (!Yum::hasModule('role') || !$this->id)
-			return array();
-
-		Yii::import('application.modules.role.models.*');
-		$roles = $this->roles;
-
-		if (Yum::hasModule('membership'))
-			$roles = array_merge($roles, $this->getActiveMemberships());
-
-		$permissions = array();
-		foreach ($roles as $role) {
-			$sql = "select id, action.title from permission left join action on action.id = permission.action where type = 'role' and principal_id = {$role->id}";
-			foreach (Yii::app()->db->cache(500)->createCommand($sql)->query()->readAll() as $permission)
-				$permissions[$permission['id']] = $permission['title'];
-		}
-
-
-			// Direct user permission assignments
-			$sql = "select id, action.title from permission left join action on action.id = permission.action where type = 'user' and principal_id = {$this->id}";
-			foreach (Yii::app()->db->cache(500)->createCommand($sql)->query()->readAll() as $permission)
-				$permissions[$permission['id']] = $permission['title'];
-
-
-		return $permissions;
-	}
-
-	public function can($action)
-	{
-		foreach ($this->getPermissions() as $permission)
-			if ($permission == $action)
-				return true;
-
-		return false;
-	}
-
-	public function relations()
-	{
-		Yii::import('application.modules.profile.models.*');
-
+    if (Yum::hasModule('role') && $this->filter_role) {
+      $criteria->join = 'left join user_role on t.id = user_role.user_id';
+      $criteria->addCondition('user_role.role_id = '.$this->filter_role);
+    }
+
+    $criteria->compare('t.id', $this->id, true);
+    $criteria->compare('t.username', $this->username, true);
+    $criteria->compare('t.status', $this->status);
+    $criteria->compare('t.superuser', $this->superuser);
+    $criteria->compare('t.createtime', $this->createtime, true);
+    $criteria->compare('t.lastvisit', $this->lastvisit, true);
+
+    $sort->attributes[] = '*'; 
+
+    return new CActiveDataProvider(get_class($this), array(
+      'criteria' => $criteria,
+      'sort' => $sort,
+      'pagination' => array('pageSize' => Yum::module()->pageSize),
+    ));
+  }
+
+  public function beforeValidate() {
+    if ($this->isNewRecord) 
+      $this->createtime = time();
+
+    return true;
+  }
+
+  // Sets a new password. Password can not be empty. If the model already
+  // exists in the database, we save the new password by save(), otherwise we
+  // only set the fields. Returns $this so this method can be chained.
+  public function setPassword($password) {
+    if ($password) {
+      $this->lastpasswordchange = time();
+      $this->password = $password;
+      $this->password_changed = true;
+      if ($this->validate()) {
+        $this->password = CPasswordHelper::hashPassword(
+          $password,
+          Yum::module()->passwordHashCost);
+        if(!$this->isNewRecord)
+          $this->save(false, array('password'));
+      }
+    }
+    return $this;
+  }
+
+  public function afterSave()
+  {
+    if (Yum::hasModule('profile') 
+      && Yum::module('profile')->enablePrivacySetting) {
+        // create a new privacy setting, if not already available
+        $setting = YumPrivacySetting::model()->findByPk($this->id);
+        if (!$setting) {
+          $setting = new YumPrivacySetting();
+          $setting->user_id = $this->id;
+          $setting->save();
+        }
+
+        if ($this->isNewRecord) {
+          Yum::log(Yum::t('A user has been created: user: {user}', array(
+            '{user}' => json_encode($this->attributes))));
+
+
+        }
+      }
+    return parent::afterSave();
+  }
+
+  /**
+   * Returns resolved table name (incl. table prefix when it is set in db configuration)
+   * Following algorith of searching valid table name is implemented:
+   *  - try to find out table name stored in currently used module
+   *  - if not found try to get table name from UserModule configuration
+   *  - if not found user default {{users}} table name
+   * @return string
+   */
+  public function tableName()
+  {
+    $this->_tableName = Yum::module()->userTable;
+
+    return $this->_tableName;
+  }
+
+  public function rules() {
+    $usernameRequirements = Yum::module()->usernameRequirements;
+    $passwordRequirements = Yum::module()->passwordRequirements;
+
+    $passwordrule = array_merge(array('password', 'YumPasswordValidator'),
+      $passwordRequirements);
+
+    $rules[] = $passwordrule;
+
+    if($usernameRequirements) {
+      $rules[] = array('username', 'length',
+        'max' => $usernameRequirements['maxLen'],
+        'min' => $usernameRequirements['minLen'],
+        'message' => Yum::t(
+          'Username length needs to be between {minLen} and {maxlen} characters', array(
+            '{minLen}' => $usernameRequirements['minLen'],
+            '{maxLen}' => $usernameRequirements['maxLen'])));
+      $rules[] = array(
+        'username',
+        'match',
+        'pattern' => $usernameRequirements['match'],
+        'message' => Yum::t($usernameRequirements['dontMatchMessage']));
+    }
+
+    $rules[] = array('username', 'unique',
+      'message' => Yum::t('This username already exists'));
+      
+    $rules[] = array('status', 'in', 'range' => array(0, 1, 2, 3, -1, -2));
+    $rules[] = array('superuser', 'in', 'range' => array(0, 1));
+    $rules[] = array('username, createtime, lastvisit, lastpasswordchange, superuser, status', 'required');
+    $rules[] = array('notifyType, avatar', 'safe');
+    $rules[] = array('password', 'required', 'on' => array('insert', 'registration'));
+    $rules[] = array('createtime, lastvisit, lastaction, superuser, status', 'numerical', 'integerOnly' => true);
+
+    if (Yum::hasModule('avatar')) {
+      // require an avatar image in the avatar upload screen
+      $rules[] = array('avatar', 'required', 'on' => 'avatarUpload');
+
+      // if automatic scaling is deactivated, require the exact size	
+      $rules[] = array('avatar', 'EPhotoValidator',
+        'allowEmpty' => true,
+        'mimeType' => array('image/jpeg', 'image/png', 'image/gif'),
+        'maxWidth' => Yum::module('avatar')->avatarMaxWidth,
+        'maxHeight' => Yum::module('avatar')->avatarMaxWidth,
+        'minWidth' => 50,
+        'minHeight' => 50,
+        'on' => 'avatarSizeCheck');
+    }
+
+
+    if (Yum::hasModule('role')) 
+      $rules[] = array('filter_role', 'safe');
+
+    return $rules;
+  }
+
+  public function assignRole($role_title) {
+    Yii::import('application.modules.role.models.*');
+    if($this->isNewRecord || !$this->id)
+      return false;
+
+    if($this->hasRole($role_title))
+      return true;
+
+    $role = YumRole::model()->find('title = :title', array(
+      ':title' => $role_title));
+
+    if($role)
+      return Yii::app()->db->createCommand(sprintf(
+        'insert into %s (user_id, role_id) values(%s, %s)',
+        Yum::module('role')->userRoleTable,
+        $this->id,
+        $role->id))->execute(); 
+    else 
+      return false;
+  }
+
+  public function hasRole($role_title) {
+    Yii::import('application.modules.role.models.*');
+
+    if (!Yum::hasModule('role'))
+      return false;
+
+
+    $roles = $this->roles;
+
+    if(Yum::hasModule('membership')) {
+      foreach($this->getActiveMemberships() as $membership)
+        $roles[] = $membership;
+    }
+
+    foreach ($roles as $role)
+      if ((is_numeric($role) && $role == $role_title) 
+        || ($role->id == $role_title || $role->title == $role_title))
+        return true;
+
+    return false;
+  }
+
+  public function getRoles()
+  {
+    if (Yum::hasModule('role')) {
+      Yii::import('application.modules.role.models.*');
+      $roles = '';
+      foreach ($this->roles as $role)
+        $roles .= ' ' . $role->title;
+      foreach ($this->getActiveMemberships() as $role)
+        $roles .= ' ' . $role->title;
+
+      return $roles;
+    }
+  }
+
+  // We retrieve the permissions from:
+  // 1.) All direct given permissions ($this->permissions)
+  // 2.) All direct given permissions to a role the user belongs
+  // 3.) All active memberships
+  public function getPermissions($subaction = null) {
+    if (!Yum::hasModule('role') || !$this->id)
+      return array();
+
+    Yii::import('application.modules.role.models.*');
+    $roles = $this->roles;
+
+    if (Yum::hasModule('membership'))
+      $roles = array_merge($roles, $this->getActiveMemberships());
+
+    $role_ids = array();
+
+    foreach ($roles as $role) 
+      $role_ids[] = $role->id;
+
+    $cmd = Yii::app()->db->createCommand()
+      ->select('id, action.title')
+      ->from('permission')
+      ->join('action', 'action.id = permission.action')
+      ->where(array('and', "type = 'role'",
+        array('in', 'principal_id', $role_ids)));
+
+    // If a subaction is given, we filter by subaction
+    if($subaction) {
+      $subaction_id = YumAction::model()->findByAttributes(array('title' => $subaction));
+      if($subaction_id)
+        $subaction_id = $subaction_id->id;
+      $cmd->where(array('and', "type = 'role'",
+        "permission.subaction = '${subaction_id}'",
+        array('in', 'principal_id', $role_ids)));
+    }
+
+    return $cmd->queryAll();
+  }
+
+  // checks if the user can access a give action.
+  // when a subaction is specified, both actions need to be 
+  // fulfilled (for example action 'forum', subaction 'read')
+  public function can($action, $subaction = null) {
+    $permissions = $this->getPermissions($subaction);
+
+    foreach($permissions as $permission)
+      if($permission['id'] == $action || $permission['title'] == $action)
+        return true;
+
+    return false;
+  }
+
+	// possible relations are cached because they depend on the active submodules
+	// and it takes many expensive milliseconds to evaluate them all the time
+	public function relations() {
 		$relations = Yii::app()->cache->get('yum_user_relations');
 		if($relations === false) {
 			$relations = array();
@@ -409,20 +392,25 @@ class YumUser extends YumActiveRecord
 				$relations['roles'] = array(
 						self::MANY_MANY, 'YumRole',
 						Yum::module('role')->userRoleTable . '(user_id, role_id)');
-
 			}
 
-			if (Yum::hasModule('messages')) {
+			if (Yum::hasModule('message')) {
 				Yii::import('application.modules.message.models.*');
 				$relations['messages'] = array(
 						self::HAS_MANY, 'YumMessage', 'to_user_id',
-						'order' => 'messages.timestamp DESC');
+						'order' => 'timestamp DESC');
+
+				$relations['unread_messages'] = array(
+						self::HAS_MANY, 'YumMessage', 'to_user_id',
+						'condition' => 'message_read = 0',
+						'order' => 'timestamp DESC');
 
 				$relations['sent_messages'] = array(
 						self::HAS_MANY, 'YumMessage', 'from_user_id');
-			}
 
+			}
 			if (Yum::hasModule('profile')) {
+				Yii::import('application.modules.profile.models.*');
 				$relations['visits'] = array(
 						self::HAS_MANY, 'YumProfileVisit', 'visited_id');
 				$relations['visited'] = array(
@@ -511,16 +499,49 @@ class YumUser extends YumActiveRecord
 		return $friends;
 	}
 
+	public function registerByHybridAuth($hybridAuthProfile) {
+		Yii::import('application.modules.profile.models.*');
+		$profile = new YumProfile();
+
+		$profile->firstname = $hybridAuthProfile->firstName;
+		$profile->lastname = $hybridAuthProfile->lastName;
+		$profile->email = $hybridAuthProfile->email;
+
+		$this->username = $hybridAuthProfile->email;
+		$this->status = 1;
+		$this->createtime = time();
+		$this->password = md5(time()); // obfuscated password
+
+		$this->save(false);
+		$profile->user_id = $this->id;
+		$profile->save(false);
+
+		if(Yum::hasModule('role'))
+			foreach(Yum::module('registration')->defaultHybridAuthRoles as $role) 
+				Yii::app()->db->createCommand(sprintf(
+							'insert into %s (user_id, role_id) values(%s, %s)',
+							Yum::module('role')->userRoleTable,
+							$this->id,
+							$role))->execute(); 
+
+		return true;
+	}
+
 	// Registers a user 
-	public function register($username = null, $password = null, $profile = null)
-	{
+	public function register($username = null,
+			$password = null,
+			$profile = null) {
+		if (!($profile instanceof YumProfile)) 
+			return false;
+
 		if ($username !== null && $password !== null) {
 			// Password equality is checked in Registration Form
 			$this->username = $username;
-			$this->password = $this->encrypt($password);
+			$this->setPassword($password);
 		}
-		$this->activationKey = $this->generateActivationKey(false, $password);
+		$this->activationKey = $this->generateActivationKey(false);
 		$this->createtime = time();
+		$this->lastvisit = 0;
 		$this->superuser = 0;
 
 		// Users stay banned until they confirm their email address.
@@ -531,17 +552,19 @@ class YumUser extends YumActiveRecord
 		if(Yum::hasModule('avatar') && Yum::module('avatar')->enableGravatar)
 			$this->avatar = 'gravatar';
 
-		if (!($profile instanceof YumProfile)) {
-			$email = $profile;
-			$this->profile = new YumProfile;
-			$this->profile->email = $email;
-			$profile = $this->profile;
-		}
-
-		if (!$this->hasErrors() && !$profile->hasErrors()) {
+		if ($this->validate() && $profile->validate()) {
 			$this->save();
 			$profile->user_id = $this->id;
 			$profile->save();
+			$this->profile = $profile;
+
+			if(Yum::hasModule('role'))
+				foreach(Yum::module('registration')->defaultRoles as $role) 
+					Yii::app()->db->createCommand(sprintf(
+								'insert into %s (user_id, role_id) values(%s, %s)',
+								Yum::module('role')->userRoleTable,
+								$this->id,
+								$role))->execute(); 
 
 			Yum::log(Yum::t('User {username} registered. Generated activation Url is {activation_url} and has been sent to {email}',
 						array(
@@ -561,12 +584,12 @@ class YumUser extends YumActiveRecord
 		/**
 		 * Quick check for a enabled Registration Module
 		 */
-		if (Yum::module('registration')) {
+		if (Yum::hasModule('registration')) {
 			$activationUrl = Yum::module('registration')->activationUrl;
 			if (is_array($activationUrl) && isset($this->profile)) {
 				$activationUrl = $activationUrl[0];
-				$params['key'] = $this->activationKey;
 				$params['email'] = $this->profile->email;
+				$params['key'] = urlencode($this->activationKey);
 
 				return Yii::app()->controller->createAbsoluteUrl($activationUrl, $params);
 			}
@@ -592,29 +615,27 @@ class YumUser extends YumActiveRecord
 	 * -2 : Wrong activation key
 	 * -3 : Profile found, but no user - database inconsistency?
 	 */
-	public static function activate($email, $key)
-	{
+	public static function activate($email, $key) {
 		Yii::import('application.modules.profile.models.*');
 
 		if ($profile = YumProfile::model()->find("email = :email", array(
-						':email' => $email))
-			 ) {
+						':email' => $email))) {
 			if ($user = $profile->user) {
 				if ($user->status != self::STATUS_INACTIVE)
 					return -1;
-				if ($user->activationKey == $key) {
+				if ($user->activationKey == urldecode($key)) {
 					$user->activationKey = $user->generateActivationKey(true);
 					$user->status = self::STATUS_ACTIVE;
 					if ($user->save(false, array('activationKey', 'status'))) {
 						Yum::log(Yum::t('User {username} has been activated', array(
 										'{username}' => $user->username)));
-						if (Yum::hasModule('messages')
-								&& Yum::module('registration')->enableActivationConfirmation
-							 ) {
-							Yii::import('application.modules.messages.models.YumMessage');
+						if (Yum::hasModule('message')
+								&& Yum::module('registration')->enableActivationConfirmation) {
+							Yii::import('application.modules.message.models.YumMessage');
 							YumMessage::write($user, 1,
 									Yum::t('Your activation succeeded'),
-									YumTextSettings::getText('text_email_activation', array(
+									strtr(
+										'The activation of the account {username} succeeded. Please use <a href="{link_login}">this link</a> to go to the login page', array(
 											'{username}' => $user->username,
 											'{link_login}' =>
 											Yii::app()->controller->createUrl('//user/user/login'))));
@@ -638,13 +659,16 @@ class YumUser extends YumActiveRecord
 	 * When user is activating, activation key becomes micortime()
 	 * @return string
 	 */
-	public function generateActivationKey($activate = false)
-	{
+	public function generateActivationKey($activate = false) {
 		if($activate) {
 			$this->activationKey = $activate;
 			$this->save(false, array('activationKey'));
 		} else
-			$this->activationKey = YumUser::encrypt(microtime() . $this->password);
+			$this->activationKey = CPasswordHelper::hashPassword(
+					microtime() . $this->password, Yum::module()->passwordHashCost);
+
+		if(!$this->isNewRecord)
+			$this->save(false, array('activationKey'));
 
 		return $this->activationKey;
 	}
@@ -653,8 +677,8 @@ class YumUser extends YumActiveRecord
 	{
 		return array(
 				'id' => Yum::t('#'),
-				'username' => Yum::t("Käyttäjä"),
-				'password' => Yum::t("Salasana"),
+				'username' => Yum::t("Username"),
+				'password' => Yum::t("Password"),
 				'verifyPassword' => Yum::t("Retype password"),
 				'verifyCode' => Yum::t("Verification code"),
 				'activationKey' => Yum::t("Activation key"),
@@ -667,22 +691,6 @@ class YumUser extends YumActiveRecord
 				);
 	}
 
-	/**
-	 * This function is used for password encryption.
-	 * @return hash string.
-	 */
-	public static function encrypt($string = "")
-	{
-		$salt = Yum::module()->salt;
-		$hashFunc = Yum::module()->hashFunc;
-		$string = sprintf("%s%s%s", $salt, $string, $salt);
-
-		if (!function_exists($hashFunc))
-			throw new CException('Function `' . $hashFunc . '` is not a valid callback for hashing algorithm.');
-
-		return $hashFunc($string);
-	}
-
 	public function withRoles($roles)
 	{
 		if(!is_array($roles))
@@ -692,8 +700,6 @@ class YumUser extends YumActiveRecord
 		$this->getDbCriteria()->addInCondition('roles.id', $roles);
 		return $this;
 	}
-
-
 
 	public function scopes()
 	{
@@ -735,6 +741,7 @@ class YumUser extends YumActiveRecord
 	 */
 	public static function getUsersByRole($roleTitle)
 	{
+		Yii::import('application.modules.role.models.*');
 		$role = YumRole::model()->findByAttributes(array('title' => $roleTitle));
 		return $role ? $role->users : null;
 	}
@@ -756,14 +763,35 @@ class YumUser extends YumActiveRecord
 		return md5(strtolower(trim($this->profile->email)));		
 	}
 
+	public function syncRoles($roles = null) {
+		if(Yum::hasModule('role')){ 
+			Yii::import('application.modules.role.models.*');
+
+				$query = sprintf("delete from %s where user_id = %s",
+						Yum::module('role')->userRoleTable,
+						$this->id
+						);
+			$result = Yii::app()->db->createCommand($query)->execute();
+			if($roles)
+				foreach($roles as $role) {
+					$query = sprintf("insert into %s (user_id, role_id) values(%s, %s)",
+							Yum::module('role')->userRoleTable,
+							$this->id,
+							$role
+							);
+					$result = Yii::app()->db->createCommand($query)->execute();
+				}
+		}
+	}
+
 	public function getAvatar($thumb = false)
 	{
 		if (Yum::hasModule('avatar') && $this->profile) {
 			$options = array();
 			if ($thumb)
-				$options = array('style' => 'width: 40px; height:40px;');
+				$options = array('class' => 'avatar', 'style' => 'width: ' . Yum::module('avatar')->avatarThumbnailWidth . 'px;');
 			else
-				$options = array('style' => 'width: ' . Yum::module('avatar')->avatarDisplayWidth . 'px;');
+				$options = array('class' => 'avatar', 'style' => 'width: ' . Yum::module('avatar')->avatarDisplayWidth . 'px;');
 
 			$return = '<div class="avatar">';
 
@@ -780,13 +808,10 @@ class YumUser extends YumActiveRecord
 				$return .= CHtml::image(Yii::app()->getAssetManager()->publish(
 							Yii::getPathOfAlias('YumAssets.images') . ($thumb
 								? '/no_avatar_available_thumb.jpg' : '/no_avatar_available.jpg'),
-						Yum::t('No image available'),
-						$options));
+							Yum::t('No image available'),
+							$options));
 			$return .= '</div><!-- avatar -->';
 			return $return;
 		}
 	}
-
-
-
 }

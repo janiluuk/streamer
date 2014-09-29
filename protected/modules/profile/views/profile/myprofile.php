@@ -1,6 +1,6 @@
 <div id="profile">
 <?php
-$this->pageTitle=Yii::app()->name . ' - ' . Yum::t('Profile');
+$this->pageTitle= Yum::t('Profile');
 $this->breadcrumbs=array(Yum::t('Profile'));
 $this->title = Yum::t('Your profile');
 if(Yum::hasModule('messages'))
@@ -77,7 +77,7 @@ $this->renderPartial('/messages/new_messages');?>
 </table>
 
 <div id="friends">
-<h2> <?php echo Yum::t('My friends'); ?> </h2>
+<h1> <?php echo Yum::t('My friends'); ?> </h1>
 <?php
 if(Yum::hasModule('friendship') && $model->friends)
 {
@@ -106,7 +106,7 @@ echo CHtml::link(ucwords($friend->username),
 ?>
 </div>
 <div id="visits">
-<h2> <?php echo Yum::t('This users have visited my profile'); ?> </h2>
+<h1> <?php echo Yum::t('These users have visited my profile'); ?> </h1>
 <?php
 	if($model->visits) {
 		$format = Yum::module()->dateTimeFormat;

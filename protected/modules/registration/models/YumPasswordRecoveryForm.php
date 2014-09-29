@@ -14,20 +14,20 @@ class YumPasswordRecoveryForm extends YumFormModel {
 	
 	public function rules()
 	{
-		return array(
-			// username and password are required
-			array('login_or_email', 'required'),
-			array('login_or_email', 'match',
-				'pattern' => '/^[A-Za-z0-9@.\s,]+$/u',
-				'message' => Yum::t('Incorrect symbols. (A-z0-9)')),
-			array('login_or_email', 'checkexists'),
-		);
+		$rules = array(
+				// username and password are required
+				array('login_or_email', 'required'),
+				array('login_or_email', 'checkexists'),
+				array('login_or_email', 'email'),
+				);
+
+		return $rules;
 	}
 
 	public function attributeLabels()
 	{
 		return array(
-			'login_or_email'=>Yum::t('Username or email'),
+			'login_or_email'=>Yum::t('Email'),
 		);
 	}
 	
@@ -39,7 +39,9 @@ class YumPasswordRecoveryForm extends YumFormModel {
 			if (strpos($this->login_or_email,"@")) {
 				$profile = YumProfile::model()->findByAttributes(array(
 							'email'=>$this->login_or_email));
-				$this->user = $profile->user instanceof YumUser ? $profile->user : null;
+				$this->user = $profile 
+					&& $profile->user 
+					&& $profile->user instanceof YumUser ? $profile->user : null;
 			} else 
 				$this->user = YumUser::model()->findByAttributes(array(
 							'username'=>$this->login_or_email));

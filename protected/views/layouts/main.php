@@ -102,7 +102,10 @@ foreach ((array)$channels as $channel) {
 
 
 	<?php echo $content; ?>
-<? $this->widget('ext.EUpdateDialog.EUpdateDialog', array("dialogOptions" => array("width" => 640, "height"=> 500, "title" => $title))); ?>
+<? 
+if (empty($title)) $title = ""; 
+
+$this->widget('ext.EUpdateDialog.EUpdateDialog', array("dialogOptions" => array("width" => 640, "height"=> 500, "title" => $title))); ?>
 	<div class="clear"></div>
 
 	<div id="footer">

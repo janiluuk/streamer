@@ -207,7 +207,7 @@ a:hover {
 
 .row:before,
 .row:after {
-  display: table;
+/*  display: table; */ 
   line-height: 0;
   content: "";
 }

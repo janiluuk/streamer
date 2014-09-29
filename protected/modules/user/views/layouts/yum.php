@@ -6,13 +6,8 @@ Yii::app()->clientScript->registerCssFile(
 $module = Yum::module();
 $this->beginContent($module->baseLayout); ?>
 
-<div id="usermenu">
-
-<?php Yum::renderFlash(); ?>
-<?php $this->renderMenu(); ?>
-</div>
-
-<div id="usercontent">
+<div class="span12">
+<div id="usercontent" class="span6 fl" style="float:left;">
 <?php
 if (Yum::module()->debug) {
 	echo CHtml::openTag('div', array(
@@ -28,5 +23,10 @@ if($this->title)
 	printf('<legend> %s </legend>', $this->title);  ?>
 	<?php echo $content;  ?>
 </div>
+<div id="usermenu" class="span3" style="float:left;">
 
+<?php Yum::renderFlash(); ?>
+<?php $this->renderMenu(); ?>
+</div>
+</div>
 <?php $this->endContent(); ?>

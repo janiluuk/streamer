@@ -115,7 +115,6 @@ abstract class GxController extends CController {
 	}
 
     public function loadModel($key="", $modelClass="") {
-
      if (empty($modelClass)) $modelClass = str_replace("Controller", "", ucfirst($this->id));
 
      if (empty($key)) {

@@ -20,6 +20,11 @@ class RegistrationModule extends CWebModule {
 	public $registrationEmail='register@website.com';
 	public $recoveryEmail='restore@website.com';
 
+	// Which roles should be assigned automatically to a fresh registered user?
+	// Use role id, for example array(1,4,5)  
+	public $defaultRoles = array();
+	public $defaultHybridAuthRoles = array();
+
 	public $registrationView = '/registration/registration';
 	public $changePasswordView = 
 		'application.modules.user.views.user.changepassword';
@@ -33,6 +38,7 @@ class RegistrationModule extends CWebModule {
 	public $enableCaptcha = true;
 
 	public $loginAfterSuccessfulActivation = false;
+	public $loginAfterSuccessfulRecovery = false;
 
 	public $controllerMap=array(
 			'registration'=>array(

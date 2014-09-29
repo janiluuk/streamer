@@ -31,11 +31,11 @@ your Database is Accessible in protected/config/main.php. </p>
 	<table>
 		<tr>
 			<td> Users </td>
-			<td> <?php echo CHtml::textField('userTable', $userTable); ?> </td>
+			<td> <?php echo CHtml::textField('userTable', Yii::app()->db->tablePrefix.$userTable); ?> </td>
 		</tr>
 			<tr>
 				<td> Message translation Table (required) </td>
-				<td> <?php echo CHtml::textField('translationTable', $translationTable); ?> </td>
+				<td> <?php echo CHtml::textField('translationTable', Yii::app()->db->tablePrefix.$translationTable); ?> </td>
 			</tr>
 		</table>
 
@@ -48,11 +48,11 @@ your Database is Accessible in protected/config/main.php. </p>
 		<table>
 			<tr>
 				<td> Roles </td>
-				<td> <?php echo CHtml::textField('roleTable', $roleTable); ?> </td> 
+				<td> <?php echo CHtml::textField('roleTable', Yii::app()->db->tablePrefix.$roleTable); ?> </td>
 			</tr>
 			<tr>
 				<td> Role Assignment </td>
-				<td> <?php echo CHtml::textField('userRoleTable', $userRoleTable); ?> </td>
+				<td> <?php echo CHtml::textField('userRoleTable', Yii::app()->db->tablePrefix.$userRoleTable); ?> </td>
 			</tr>
 				</table>
 	</div>
@@ -67,11 +67,11 @@ your Database is Accessible in protected/config/main.php. </p>
 		<table>
 			<tr>
 				<td> Membership assignment </td>
-				<td> <?php echo CHtml::textField('membershipTable', $membershipTable); ?> </td> 
+				<td> <?php echo CHtml::textField('membershipTable', Yii::app()->db->tablePrefix.$membershipTable); ?> </td>
 			</tr>
 			<tr>
 				<td> Payment types </td>
-				<td> <?php echo CHtml::textField('paymentTable', $paymentTable); ?> </td> 
+				<td> <?php echo CHtml::textField('paymentTable', Yii::app()->db->tablePrefix.$paymentTable); ?> </td>
 			</tr>
 				</table>
 
@@ -87,11 +87,11 @@ your Database is Accessible in protected/config/main.php. </p>
 		<table>
 			<tr>
 				<td> Permission Assignment </td>
-				<td> <?php echo CHtml::textField('permissionTable', $permissionTable); ?> </td>
+				<td> <?php echo CHtml::textField('permissionTable', Yii::app()->db->tablePrefix.$permissionTable); ?> </td>
 			</tr>
 			<tr>
 				<td> Actions </td>
-				<td> <?php echo CHtml::textField('actionTable', $actionTable); ?> </td>
+				<td> <?php echo CHtml::textField('actionTable', Yii::app()->db->tablePrefix.$actionTable); ?> </td>
 			</tr>
 				</table>
 	</div>
@@ -105,7 +105,7 @@ your Database is Accessible in protected/config/main.php. </p>
 		<table>
 			<tr>
 				<td> Messages </td>
-				<td> <?php echo CHtml::textField('messageTable', $messageTable); ?> </td> 
+				<td> <?php echo CHtml::textField('messageTable', Yii::app()->db->tablePrefix.$messageTable); ?> </td>
 			</tr>
 		</table>
 	</div>
@@ -119,12 +119,12 @@ your Database is Accessible in protected/config/main.php. </p>
 		<table>
 			<tr>
 				<td> User groups </td>
-				<td> <?php echo CHtml::textField('usergroupTable', $usergroupTable); ?> </td> 
+				<td> <?php echo CHtml::textField('usergroupTable', Yii::app()->db->tablePrefix.$usergroupTable); ?> </td>
 			</tr>
 			<tr>
 				<td> User group messages</td>
-				<td> <?php echo CHtml::textField('usergroupMessagesTable',
-						$usergroupMessagesTable); ?> </td> 
+				<td> <?php echo CHtml::textField('usergroupMessageTable',
+                    Yii::app()->db->tablePrefix.$usergroupMessageTable); ?> </td>
 				</tr>
 		</table>
 
@@ -138,7 +138,7 @@ your Database is Accessible in protected/config/main.php. </p>
 		<table>
 			<tr>
 				<td> Friendships </td>
-				<td> <?php echo CHtml::textField('friendshipTable', $friendshipTable); ?> </td> 
+				<td> <?php echo CHtml::textField('friendshipTable', Yii::app()->db->tablePrefix.$friendshipTable); ?> </td>
 			</tr>
 		</table>
 	</div>
@@ -150,25 +150,21 @@ your Database is Accessible in protected/config/main.php. </p>
 
 	<div id="profiles">
 		<table>
-			<tr>
-				<td> Profile Fields </td>
-				<td> <?php echo CHtml::textField('profileFieldTable', $profileFieldTable);?> </td>
+			<tr> 
+				<td> Profiles </td>
+				<td> <?php echo CHtml::textField('profileTable', Yii::app()->db->tablePrefix.$profileTable); ?> </td>
 			</tr>
 			<tr> 
 				<td> Profile Visits</td>
-				<td> <?php echo CHtml::textField('profileVisitTable', $profileVisitTable);?> </td> 
+				<td> <?php echo CHtml::textField('profileVisitTable', Yii::app()->db->tablePrefix.$profileVisitTable);?> </td>
 			</tr>			
 			<tr> 
 				<td> Profile Comments</td>
-				<td> <?php echo CHtml::textField('profileCommentTable', $profileCommentTable);?> </td> 
+				<td> <?php echo CHtml::textField('profileCommentTable', Yii::app()->db->tablePrefix.$profileCommentTable);?> </td>
 			</tr>			
-			<tr> 
-				<td> Profiles </td>
-				<td> <?php echo CHtml::textField('profileTable', $profileTable); ?> </td> 
-			</tr>
 		<tr>
 			<td> Privacy settings</td>
-			<td> <?php echo CHtml::textField('privacySettingTable', $privacySettingTable); ?> </td>
+			<td> <?php echo CHtml::textField('privacySettingTable', Yii::app()->db->tablePrefix.$privacySettingTable); ?> </td>
 		</tr>
 		</table>
 	</div>

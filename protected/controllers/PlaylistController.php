@@ -14,8 +14,8 @@ class PlaylistController extends AweController
 	 */
 	public function actionView($id)
 	{
-	        $this->performAjaxValidation($model, 'playlist-form');
 	$model = $this->loadModel($id);
+	        $this->performAjaxValidation($model, 'playlist-form');
 	
 		if(isset($_POST['Playlist']))
 		{
@@ -244,7 +244,7 @@ class PlaylistController extends AweController
 	 * If the data model is not found, an HTTP exception will be raised.
 	 * @param integer the ID of the model to be loaded
 	 */
-	public function loadModel($id)
+	public function loadModel($id="", $modelClass="")
 	{
 		$model=Playlist::model()->findByPk($id);
 		if($model===null)
@@ -256,7 +256,7 @@ class PlaylistController extends AweController
 	 * Performs the AJAX validation.
 	 * @param CModel the model to be validated
 	 */
-	protected function performAjaxValidation($model)
+	protected function performAjaxValidation($model, $form=null)
 	{
 		if(isset($_POST['ajax']) && $_POST['ajax']==='playlist-form')
 		{

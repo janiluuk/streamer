@@ -1,11 +1,13 @@
+<div class="container">
+<div class="span5">
+<div class="row">
+
 <div class="form">
 
 <?php $form=$this->beginWidget('CActiveForm', array(
 	'id'=>'permission-create-form',
 	'enableAjaxValidation'=>true,
 )); ?>
-
-	<p class="note">Fields with <span class="required">*</span> are required.</p>
 
 	<?php echo $form->errorSummary($model); ?>
 
@@ -72,13 +74,21 @@
 		</div>
 		</div>
 
-
-
 	<div class="row">
 		<?php echo $form->labelEx($model,'action'); ?>
 		<?php $this->widget('Relation', array(
 					'model' => $model,
 					'relation' => 'Action',
+					'fields' => 'title',
+					));?>
+		<?php echo $form->error($model,'action'); ?>
+	</div>
+
+	<div class="row">
+		<?php echo $form->labelEx($model,'subaction'); ?>
+		<?php $this->widget('Relation', array(
+					'model' => $model,
+					'relation' => 'Subaction',
 					'fields' => 'title',
 					));?>
 		<?php echo $form->error($model,'action'); ?>
@@ -100,6 +110,9 @@
 
 </div><!-- form -->
 
+</div>
+</div>
+</div>
 <?php Yii::app()->clientScript->registerScript('type', "
 $('#YumPermission_type_0').click(function() {
 $('#assignment_role').hide();
@@ -110,3 +123,5 @@ $('#assignment_role').show();
 $('#assignment_user').hide();});
 
 ");
+?>
+
